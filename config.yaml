@@ -1,0 +1,20 @@
+model_type: "roberta"
+base_model: ["sentence-transformers/all-mpnet-base-v2"]
+output_path: "output"
+random_seed: 42
+train_path: "data/nasa_train_sample.csv"
+test_path: "data/nasa_test_sample.csv"
+just_predict: False
+label_to_int:
+  bug: 0
+  non-bug: 1
+merge_train: False
+add_train: "data/nlbse_23_train.csv"
+add_labels: ["bug", "feature", "documentation", "question"]
+map_labels: True
+label_mapping:
+  bug: bug
+  documentation: non-bug
+  feature: non-bug
+  question: non-bug
+

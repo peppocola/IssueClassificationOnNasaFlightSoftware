@@ -1,0 +1,148 @@
+label,text
+bug,"Fix #297, CCSDS Command Secondary Header Endian Agnostic **Describe the contribution**
+Implement CCSDS command secondary header such that it is endian agnostic in code and unit test support.
+Fix #297
+
+**Testing performed**
+Steps taken to test the contribution:
+1. Tested via bundle CI (including non-zero command send to reset)
+1. Also tested locally with enabling TO via cFS-GroundSystem
+
+This covered both direct cmdUtil call and cFS-GroundSystem use.
+
+**Expected behavior changes**
+Cmd code (and checksum) are always in the same place (matches GSFC spec for command secondary header)
+
+**System(s) tested on**
+ - Hardware: CI and cFS Dev Server
+ - OS: Ubuntu 18.04
+ - Versions: test bundle with this change and https://github.com/nasa/cFS-GroundSystem/pull/66 in cFS-GroundStation
+
+**Additional context**
+See also https://github.com/nasa/cFS-GroundSystem/pull/66 these should be merged together
+
+**Third party code**
+None
+
+**Contributor Info - All information REQUIRED for consideration of pull request**
+Jacob Hageman - NASA/GSFC"
+feature,"Size and alignment of CFE_ES_MemHandle_t vary depending on platform; ground-visible structures affected `CFE_ES_MemHandle_t` is [https://babelfish.arc.nasa.gov/trac/cfs_cfe/browser/fsw/cfe-core/src/inc/cfe_es.h#5098 defined] as
+`typedef cpuaddr CFE_ES_MemHandle_t;` and the size and alignment of `cpuaddr` vary by platform.
+
+This type is used as a member in (at least) the following telemetry structures:
+
+* [https://babelfish.arc.nasa.gov/trac/cfs_cfe/browser/fsw/cfe-core/src/inc/cfe_sb_msg.h#8870 CFE_SB_HousekeepingTlm_Payload_t]
+* [https://babelfish.arc.nasa.gov/trac/cfs_cfe/browser/fsw/cfe-core/src/inc/cfe_tbl_msg.h#10547 CFE_TBL_HousekeepingTlm_Payload_t]
+* [https://babelfish.arc.nasa.gov/trac/cfs_cfe/browser/fsw/cfe-core/src/inc/cfe_es_msg.h#45469 CFE_ES_PoolStatsTlm_Payload_t]
+
+It is also used in (at least) the following command structure:
+
+* [https://babelfish.arc.nasa.gov/trac/cfs_cfe/browser/fsw/cfe-core/src/inc/cfe_es_msg.h#45416 CFE_ES_SendMemPoolStatsCmd_Payload_t]
+
+On 64-bit platforms which require self-alignment (e.g. x86_64, aarch64), the presence of a `CFE_ES_MemHandle_t` member causes the structure to require 8 byte alignment. This results in a 4 byte hole between the 12 byte telemetry header and payload when the payload is defined as a separate structure, such as the cases noted above.
+
+Note that unlike the various address values in `CFE_ES_AppInfo_t`, the actual value of these handles is needed on the ground for use in the ES ""send MemPool stats"" command, which takes a handle as its argument. In addition, these telemetry structures don't have a field indicating the validity of the handle.
+
+Both of these factors suggest the fix accepted by the CCB for `CFE_ES_AppInfo_t`, populating the fields with the low bytes of the value and marking them invalid when the fields are too small to hold the actual value, may not be viable for these structures."
+feature,"Remove old MKS flags from comments $Id, $Date, $Revision, $Log, etc all no longer useful and slightly misleading since they don't get updated."
+feature,"CFE_TBL_ERR_FILE_NOT_FOUND error defined but not used **Is your feature request related to a problem? Please describe.**
+This is documented as a return code from `CFE_TBL_Load` however this function actually returns `CFE_TBL_ERR_ACCESS` when it cannot open the file.  This ""file not found"" status code is not used- and it cannot be used - because OS_OpenCreate does not really differentiate between the file not existing and existing but not having permission to open it.
+
+**Describe the solution you'd like**
+Remove unused status code
+
+**Additional context**
+Found as part of scrub in #1724
+
+**Requester Info**
+Joseph Hickey, Vantage Systems, Inc.
+"
+bug,"Add Unit Test Baseline Results and Log Files The unit test baseline (specifically for the posix and VxWorks implementations that have undergone unit testing for the 4.2.0 release) needs to be included and delivered with the release.
+
+It is recommended to create a ""Results"" directory under /src/unit-test-coverage/os for each os implementation that has been unit tested for this release.  "
+documentation,"Fix #30, Resolve doxygen warning **Describe the contribution**
+Fix #30
+Resolve doxygen warnings
+
+**Testing performed**
+Steps taken to test the contribution:
+
+1. Corrected line(s) that generated warnings
+2. Rebuilt documentation with `make doc`
+3. Observed no warnings generated
+4. Viewed relevant page(s) to verify correctness
+
+**Expected behavior changes**
+Changes to documentation only; no code impact
+
+**Contributor Info - All information REQUIRED for consideration of pull request**
+Leor Bleier, NASA\GSFC
+"
+feature,"Factor out construction of FullName in SB event messages **Is your feature request related to a problem? Please describe.**
+`CFE_SB_GetAppTskName(TskId, FullName)` is called in virtually every API event message, example:
+https://github.com/nasa/cFE/blob/c8b5e00bb722d8f59787ae8f82634feba5d39f60/modules/sb/fsw/src/cfe_sb_api.c#L235-L260
+
+Note for the special case in `CFE_SB_DeletePipeFull` it currently overloads FullName with caller and owner.  Really should report both if there isn't a match.  Also FullName is referenced before initialized below, but not used...:
+https://github.com/nasa/cFE/blob/c8b5e00bb722d8f59787ae8f82634feba5d39f60/modules/sb/fsw/src/cfe_sb_api.c#L378
+
+**Describe the solution you'd like**
+Construct FullName outside switch and use it.
+
+**Describe alternatives you've considered**
+Really there's inconsistent reporting in APIs (sometimes system log, sometimes events, unique message formats all over with differing info), would benefit from an overhaul.  See also #1403 and related issues (#994, etc) to fix.
+
+**Additional context**
+Code review
+
+**Requester Info**
+Jacob Hageman - NASA/GSFC
+"
+feature,"Fix #827, Remove old name and id defines **Describe the contribution**
+Fix #827, Remove old name and id defines
+ CFE_PLATFORM_CPU_ID, CFE_PLATFORM_CPU_NAME, and CFE_MISSION_SPACECRAFT_ID
+
+Use CFE_PSP_GetProcessorId(), CFE_PSP_GetProcessorName(), CFE_PSP_GetSpacecraftId() going forward.
+
+**Testing performed**
+Built with unit tests, passed.  Also nominal core-cfe run.
+
+**Expected behavior changes**
+None
+
+**System(s) tested on**
+ - Hardware: cFS Dev Server
+ - OS: Ubuntu 18.04
+ - Versions: Bundle main + this commit
+
+**Additional context**
+#710
+
+**Third party code**
+None
+
+**Contributor Info - All information REQUIRED for consideration of pull request**
+Jacob Hageman - NASA/GSFC"
+feature,"Remove references to CFE_ES_RegisterApp **Is your feature request related to a problem? Please describe.**
+As part of nasa/osal#853 and nasa/cfe#1215 the registration APIs are getting fully deprecated and removed.  Applications no longer need to call OS_TaskRegister, CFE_ES_RegisterApp, or CFE_ES_RegisterChildTask.
+
+**Describe the solution you'd like**
+Remove references to these functions.
+
+**Additional context**
+Will be required with nasa/osal#853 and nasa/cfe#1215
+
+**Requester Info**
+Joseph Hickey, Vantage Systems, Inc.
+"
+bug,"ES - Memory Pool Size No Longer Requires 32-bit Alignment The CCB approved commit under Trac #230 redesigned the ES memory pool to perform alignment in accordance with the base address vs. the size of the data pool.  This change affects ES requirement cES1321.1 which is no longer needed.  Instead a new error check is performed to ensure the size of the pool is not less than the minimum block size.  The affected requirement, along with its parent, is pasted below for reference.
+
+cES1321:
+
+""cES1321 Upon receipt of a Request the cFE shall allocate a block of memory of the specified size from the specified Memory Pool.""
+
+cES1321.1:
+
+""cES1321.1 If the specified size is not an integral multiple of 32 bit words, the size shall be rounded up to an integral of 32 bit words.""
+
+
+"

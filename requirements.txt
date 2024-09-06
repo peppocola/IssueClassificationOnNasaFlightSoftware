@@ -1,0 +1,17 @@
+PyYAML
+bitsandbytes
+transformers==4.39.0
+datasets
+git+https://github.com/huggingface/peft.git
+git+https://github.com/huggingface/accelerate.git
+torch
+pandas
+tqdm
+loguru
+huggingface-hub[cli]
+scikit-learn
+openpyxl
+openai
+sentencepiece
+protobuf
+setfit

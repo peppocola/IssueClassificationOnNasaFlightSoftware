@@ -1,0 +1,263 @@
+label,text
+bug,"Exiting an Application Creates an Application with an Unknown State (GSFC DCR 23035) ES will continually send out event message #79 - ""ES_ProcControlReq: Unknown State ( %d ) Application %s"", with the unknown state set to 1, when an application exits via the CFE_ES_ExitApp API function call. See attached email thread for more details."
+feature,"Header structure name assumptions limit MSG abstraction capability **Is your feature request related to a problem? Please describe.**
+The MSG library is supposed to offer a complete abstraction of the header format, but in practice there are still some direct references to header structure members in Caelum which limit this capability.
+
+In particular, when converting a local message buffer to a `CFE_MSG_Message_t` pointer, when passing into any CFE_SB API, the code references a sub-member, such as:
+
+https://github.com/nasa/cFE/blob/64a6a59456fa9e47dc93e4bb9cecacc3d86d1862/modules/es/fsw/src/cfe_es_task.c#L396
+
+While this was nice in that it is fully type-safe, it limits the header abstraction in two important ways:
+1. It assumes/requires that the buffer itself contains a `TlmHeader` member.
+2. It assumes/requires that the `TlmHeader` structure, in turn, contains a `.Msg` member.
+
+For item (2) above, the TLM header is a structure controlled/defined by the CFE_MSG module, and there is no guarantee that a ""Msg"" member exists.  This will be a problem if an alternate MSG module is used, where the `CFE_MSG_Message_t` member is not called ""Msg"".  (The whole point of MSG is to make these structures free-form, and no assumptions should be made as to their internal structure, so this reference somewhat defeats that purpose).
+
+**Describe the solution you'd like**
+
+- Convert this to a cast instead, e.g. `(CFE_MSG_Message_t*)&CFE_ES_Global.TaskData.HkPacket`
+- Have CFE_MSG provide a macro/inline function to implement this conversion/cast
+
+**Describe alternatives you've considered**
+Just document what the names need to be, and make it a requirement to name things in this manner.
+
+Major issues with that - mainly that it is not friendly to automated tools which might be used to generate these headers/structures from a CMD/TLM database.
+
+**Additional context**
+There is no real convention to the names that exist today.  It would be more viable to do that if a specific convention/reasoning was followed, such as the `CFE_MSG_Message_t` member being called `Message` (i.e. without the CFE_MSG_ prefix or _t suffix).  This way a tool would know what name to call things in the generated files.  But as it is, there is simply no naming consistency in these members, a tool would have to hard-code ""special"" member names for each structure, for no good reason other than that's what a human had used for an abbreviation at one point.
+
+But furthermore, even if a name convention was follwed prevents an additional layer of headers to be added.  For example, the ""TlmHeader"" is assumed contain a ""Msg"" member directly.  However in some implementations a user might want an intermediate header, where it would become `.TlmHeader.Intermediate.Msg` instead.  There is no way to accommodate a third layer with the current assumptions in the code.
+
+_Regarding suggested casts_ -- by casting, it can be converted without knowing what the member is specifically named, nor knowing how deep within the structure the Message structure lies.  This is not as bad as it sounds, and not really going back to being type-unsafe, because it is being cast to a `CFE_MSG_Message_t*`, not a `void*` as previous CFE versions had done here.  Because of this, and the fact that CFE is compiled with strict aliasing rules enabled, it will trigger an alias violation if the structure is not actually cast-able to a `CFE_MSG_Message_t` type.  While this is not quite as robust as the current type safety, it is much more flexible, and user errors/mismatches should still be caught.
+
+**Requester Info**
+Joseph Hickey, Vantage Systems, Inc.
+"
+feature,"EVS Unit Test Code Coverage Incomplete in Task.c (GSFC DCR 8492) cfe_evs_task.c - 99.61% % coverage (2 Lines of Code NOT executed)
+
+The lines not covered are in CFE_EVS_TaskInit:
+
+        -:  385:   /* Register EVS task for event services */
+        5:  386:   Status = CFE_EVS_Register(NULL, 0, CFE_EVS_BINARY_FILTER);
+        5:  387:   if (Status != CFE_SUCCESS)
+        -:  388:   {
+    #####:  389:      CFE_ES_WriteToSysLog(""EVS:Call to CFE_EVS_Register Failed:RC=0x%08X\n"",(unsigned int)Status);
+    #####:  390:      return Status;
+        -:  391:   }
+
+REASON: None"
+bug,"tests: Calling sem_destroy() on semaphores that are still being used **Is your feature request related to a problem? Please describe.**
+
+(I would like to open this as a general discussion so using the Feature ticket as the closest one)
+
+Running some of the OSAL's tests on macOS results in `BUG IN CLIENT OF LIBDISPATCH: Semaphore object deallocated while in use""`. Instead of `<semaphore.h>` macOS's provides `<dispatch/semaphore.h>` and with some minor differences, the API is very similar. The above error message is a protection built in the implementation of semaphores to prevent a user from calling `dispatch_release()` on a semaphore that is still being used.
+
+**Describe the solution you'd like**
+
+3 of the current OSAL's test are hitting this error (see Appendix below) and I am wondering if it would be practical to improve the design of these tests.
+
+I would also like to check with someone my understanding that destroying the resources while they are still being used results in undefined behaviour and that the undefined behaviour should be avoided even if the scope is test code, not the OSAL code itself.
+
+**Describe alternatives you've considered**
+
+For now, I am using an alternative implementation of semaphores found [here](https://stackoverflow.com/a/48778462/598057) but I think it would be better to use the `dispatch_semaphore.h` as a more native implementation on macOS.
+
+**Additional context**
+
+`–`
+
+**Requester Info**
+
+Stanislav Pankevich, individual contribution.
+
+---
+
+# Appendix: Calling sem_destroy() when a semaphore is still being used
+
+### 70 - osal_core_UT (ILLEGAL)
+
+```
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BAD_INSTRUCTION (code=EXC_I386_INVOP, subcode=0x0)
+  * frame #0: 0x00007fff2026d229 libdispatch.dylib`_dispatch_semaphore_dispose.cold.1 + 27
+    frame #1: 0x00007fff202400bc libdispatch.dylib`_dispatch_semaphore_dispose + 46
+    frame #2: 0x00007fff2023ec1a libdispatch.dylib`_dispatch_dispose + 87
+    frame #3: 0x000000010804c130 osal_core_UT`mac_sem_destroy(psem=0x00000001082b1f90) at posix-macos-semaphore2.c:44:5
+    frame #4: 0x0000000108049964 osal_core_UT`OS_CountSemDelete_Impl(token=0x00007ffee7bcf8d8) at os-impl-countsem.c:114:9
+    frame #5: 0x000000010803f386 osal_core_UT`OS_CountSemDelete(sem_id=196634) at osapi-countsem.c:135:23
+    frame #6: 0x0000000108038416 osal_core_UT`UT_os_count_sem_take_test at ut_oscore_countsem_test.c:235:9
+    frame #7: 0x000000010803e4f9 osal_core_UT`UtTest_Run at uttest.c:174:17
+    frame #8: 0x000000010803dae9 osal_core_UT`OS_Application_Run at utbsp.c:232:5
+    frame #9: 0x000000010805154a osal_core_UT`main(argc=1, argv=0x00007ffee7bcf9d8) at bsp_start.c:247:5
+    frame #10: 0x00007fff20404f3d libdyld.dylib`start + 1
+    frame #11: 0x00007fff20404f3d libdyld.dylib`start + 1
+```
+
+```
+_dispatch_semaphore_dispose.cold.1:
+        movq   %rsi, %rax
+        subq   (%rdi), %rax
+        leaq   0x62a5(%rip), %rcx         ; ""BUG IN CLIENT OF LIBDISPATCH: Semaphore object deallocated while in use""
+        movq   %rcx, 0x604a3566(%rip)     ; gCRAnnotations + 8
+        movq   %rax, 0x604a358f(%rip)     ; gCRAnnotations + 56
+        ud2
+```
+
+### 54 - count-sem-test (ILLEGAL)
+
+```
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BAD_INSTRUCTION (code=EXC_I386_INVOP, subcode=0x0)
+  * frame #0: 0x00007fff2026d229 libdispatch.dylib`_dispatch_semaphore_dispose.cold.1 + 27
+    frame #1: 0x00007fff202400bc libdispatch.dylib`_dispatch_semaphore_dispose + 46
+    frame #2: 0x00007fff2023ec1a libdispatch.dylib`_dispatch_dispose + 87
+    frame #3: 0x0000000102c1f980 count-sem-test`mac_sem_destroy(psem=0x0000000102c3cbc8) at posix-macos-semaphore2.c:44:5
+    frame #4: 0x0000000102c1d1c4 count-sem-test`OS_CountSemDelete_Impl(token=0x00007ffeecff47c8) at os-impl-countsem.c:114:9
+    frame #5: 0x0000000102c13156 count-sem-test`OS_CountSemDelete(sem_id=196609) at osapi-countsem.c:135:23
+    frame #6: 0x0000000102c12e7d count-sem-test`OS_CleanUpObject(object_id=196609, arg=0x00007ffeecff493c) at osapi-common.c:332:13
+    frame #7: 0x0000000102c160fc count-sem-test`OS_ForEachDoCallback(obj_id=196609, ref=0x00007ffeecff4880) at osapi-idmap.c:247:5
+    frame #8: 0x0000000102c1731d count-sem-test`OS_ObjectIdIteratorProcessEntry(iter=0x00007ffeecff4898, func=(count-sem-test`OS_ForEachDoCallback at osapi-idmap.c:243)) at osapi-idmap.c:1370:14
+    frame #9: 0x0000000102c1743a count-sem-test`OS_ForEachObjectOfType(idtype=3, creator_id=0, callback_ptr=(count-sem-test`OS_CleanUpObject at osapi-common.c:315), callback_arg=0x00007ffeecff493c) at osapi-idmap.c:1436:13
+    frame #10: 0x0000000102c173a7 count-sem-test`OS_ForEachObject(creator_id=0, callback_ptr=(count-sem-test`OS_CleanUpObject at osapi-common.c:315), callback_arg=0x00007ffeecff493c) at osapi-idmap.c:1410:9
+    frame #11: 0x0000000102c12cf9 count-sem-test`OS_DeleteAllObjects at osapi-common.c:386:9
+    frame #12: 0x0000000102c12c49 count-sem-test`OS_API_Teardown at osapi-common.c:262:5
+    frame #13: 0x0000000102c123b9 count-sem-test`UtTest_Run at uttest.c:180:17
+    frame #14: 0x0000000102c11979 count-sem-test`OS_Application_Run at utbsp.c:232:5
+    frame #15: 0x0000000102c24c1a count-sem-test`main(argc=1, argv=0x00007ffeecff4a08) at bsp_start.c:247:5
+    frame #16: 0x00007fff20404f3d libdyld.dylib`start + 1
+    frame #17: 0x00007fff20404f3d libdyld.dylib`start + 1
+```
+
+```
+_dispatch_semaphore_dispose.cold.1:
+        movq   %rsi, %rax
+        subq   (%rdi), %rax
+        leaq   0x62a5(%rip), %rcx         ; ""BUG IN CLIENT OF LIBDISPATCH: Semaphore object deallocated while in use""
+        movq   %rcx, 0x604a3566(%rip)     ; gCRAnnotations + 8
+        movq   %rax, 0x604a358f(%rip)     ; gCRAnnotations + 56
+        ud2
+```
+
+### 55 - count-sem-timeout-test (ILLEGAL)
+
+```
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BAD_INSTRUCTION (code=EXC_I386_INVOP, subcode=0x0)
+  * frame #0: 0x00007fff2026d229 libdispatch.dylib`_dispatch_semaphore_dispose.cold.1 + 27
+    frame #1: 0x00007fff202400bc libdispatch.dylib`_dispatch_semaphore_dispose + 46
+    frame #2: 0x00007fff2023ec1a libdispatch.dylib`_dispatch_dispose + 87
+    frame #3: 0x0000000106f7a840 count-sem-timeout-test`mac_sem_destroy(psem=0x0000000106f97bc8) at posix-macos-semaphore2.c:44:5
+    frame #4: 0x0000000106f78084 count-sem-timeout-test`OS_CountSemDelete_Impl(token=0x00007ffee8c997b8) at os-impl-countsem.c:114:9
+    frame #5: 0x0000000106f6e016 count-sem-timeout-test`OS_CountSemDelete(sem_id=196609) at osapi-countsem.c:135:23
+    frame #6: 0x0000000106f6dd3d count-sem-timeout-test`OS_CleanUpObject(object_id=196609, arg=0x00007ffee8c9992c) at osapi-common.c:332:13
+    frame #7: 0x0000000106f70fbc count-sem-timeout-test`OS_ForEachDoCallback(obj_id=196609, ref=0x00007ffee8c99870) at osapi-idmap.c:247:5
+    frame #8: 0x0000000106f721dd count-sem-timeout-test`OS_ObjectIdIteratorProcessEntry(iter=0x00007ffee8c99888, func=(count-sem-timeout-test`OS_ForEachDoCallback at osapi-idmap.c:243)) at osapi-idmap.c:1370:14
+    frame #9: 0x0000000106f722fa count-sem-timeout-test`OS_ForEachObjectOfType(idtype=3, creator_id=0, callback_ptr=(count-sem-timeout-test`OS_CleanUpObject at osapi-common.c:315), callback_arg=0x00007ffee8c9992c) at osapi-idmap.c:1436:13
+    frame #10: 0x0000000106f72267 count-sem-timeout-test`OS_ForEachObject(creator_id=0, callback_ptr=(count-sem-timeout-test`OS_CleanUpObject at osapi-common.c:315), callback_arg=0x00007ffee8c9992c) at osapi-idmap.c:1410:9
+    frame #11: 0x0000000106f6dbb9 count-sem-timeout-test`OS_DeleteAllObjects at osapi-common.c:386:9
+    frame #12: 0x0000000106f6db09 count-sem-timeout-test`OS_API_Teardown at osapi-common.c:262:5
+    frame #13: 0x0000000106f6d279 count-sem-timeout-test`UtTest_Run at uttest.c:180:17
+    frame #14: 0x0000000106f6c839 count-sem-timeout-test`OS_Application_Run at utbsp.c:232:5
+    frame #15: 0x0000000106f7fada count-sem-timeout-test`main(argc=1, argv=0x00007ffee8c999f8) at bsp_start.c:247:5
+    frame #16: 0x00007fff20404f3d libdyld.dylib`start + 1
+    frame #17: 0x00007fff20404f3d libdyld.dylib`start + 1
+```
+
+```
+_dispatch_semaphore_dispose.cold.1:
+        movq   %rsi, %rax
+        subq   (%rdi), %rax
+        leaq   0x62a5(%rip), %rcx         ; ""BUG IN CLIENT OF LIBDISPATCH: Semaphore object deallocated while in use""
+        movq   %rcx, 0x604a3566(%rip)     ; gCRAnnotations + 8
+        movq   %rax, 0x604a358f(%rip)     ; gCRAnnotations + 56
+        ud2
+```
+"
+documentation,"Documentation in targets.cmake does not match current implementation **Is your feature request related to a problem? Please describe.**
+https://github.com/nasa/cFE/blob/983157db90bd205977c52762506ccbf2132837f3/cmake/sample_defs/targets.cmake#L8-L12
+
+https://github.com/nasa/cFE/blob/983157db90bd205977c52762506ccbf2132837f3/cmake/sample_defs/targets.cmake#L100-L105
+
+cpu number is now assigned differently, name is assigned differently, etc...
+
+**Describe the solution you'd like**
+Update documentation to be consistent
+
+**Describe alternatives you've considered**
+None
+
+**Additional context**
+None
+
+**Requester Info**
+Jacob Hageman - NASA/GSFC
+"
+feature,"Combine loops in SC_BuildTimeIndexTable There are two loops in SC_BuildTimeIndexTable that appear to be easily combinable.
+
+Imported from GSFCCFS-1466"
+bug,"Hardcode of spacecraft id to 42 in psp unit test stub **Is your feature request related to a problem? Please describe.**
+Likely should be 0x42 since that's the historical sample setting.  Not critical since this is just stub data, but easier to understand intent if the settings are consistent.
+
+**Describe the solution you'd like**
+Default spacecraft ID to the historical setting.
+
+**Describe alternatives you've considered**
+Some random value, or use CFE_SPACECRAFT_ID_VALUE
+
+**Additional context**
+nasa/cfe#710, nasa/cfe#828
+
+**Requester Info**
+Jacob Hageman - NASA/GSFC"
+feature,"Factor out duplicate code in `CFE_TIME_CalculateUTC` by using `CFE_TIME_CalculateTAI` **Is your feature request related to a problem? Please describe.**
+Duplicated code:
+CFE_TIME_CalculateUTC
+
+**Describe the solution you'd like**
+UTC = TAI - LeapSeconds.  Use the utility function instead of duplicating logic to get TAI.
+
+**Describe alternatives you've considered**
+None
+
+**Additional context**
+Code review
+
+**Requester Info**
+Jacob Hageman - NASA/GSFC
+"
+feature,"Apply code style **Is your feature request related to a problem? Please describe.**
+Inconstant style
+
+**Describe the solution you'd like**
+See https://github.com/nasa/ci_lab/pull/30 and https://github.com/nasa/ci_lab/pull/28
+
+**Describe alternatives you've considered**
+N/A
+
+**Additional context**
+N/A
+
+**Requester Info**
+Jacob Hageman - NASA/GSFC"
+feature,"Fix #580, Deprecate CFE_OS_ abstracted error codes **Describe the contribution**
+Fix #580 - deprecates CFE_OS_ abstracted OS error codes
+Added CFE_OMIT_DEPRECATED_6_7 just to be consistent
+Also fix #552 - removes non-existent codes
+
+**Testing performed**
+Steps taken to test the contribution:
+1. CI - see https://travis-ci.com/github/skliper/cFS/builds/157872188
+
+**Expected behavior changes**
+None
+
+**System(s) tested on**
+ - Hardware: AMD
+ - OS: Ubuntu 18.04
+ - Versions: bundle + this change
+
+**Additional context**
+None
+
+**Third party code**
+None
+
+**Contributor Info - All information REQUIRED for consideration of pull request**
+Jacob Hageman - NASA/GSFC"
