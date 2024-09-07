@@ -1,10 +1,39 @@
 import os
+import wandb
 from config.config_loader import load_config
 from data_processing.dataset_utils import preprocess_dataset, print_label_distribution
 from model.model_training import train_setfit_model, train_roberta_model
 from model.model_prediction import predict_setfit, predict_roberta
 from evaluation.result_saving import save_results, generate_classification_report
 from setfit import SetFitModel
+
+def get_hyperparameters(config, model_type):
+    """Extract relevant hyperparameters based on model type."""
+    common_params = {
+        "model_type": model_type,
+        "random_seed": config.get('random_seed'),
+        "base_model": config.get('base_model'),
+    }
+    
+    if model_type == 'setfit':
+        return {
+            **common_params,
+            "batch_size": config.get('batch_size'),
+            "num_iterations": config.get('num_iterations'),
+            "num_epochs": config.get('num_epochs'),
+        }
+    elif model_type == 'roberta':
+        return {
+            **common_params,
+            "learning_rate": config.get('learning_rate'),
+            "num_train_epochs": config.get('num_train_epochs'),
+            "per_device_train_batch_size": config.get('per_device_train_batch_size'),
+            "weight_decay": config.get('weight_decay'),
+            "use_custom_loss": config.get('use_custom_loss'),
+            "class_weights": config.get('class_weights'),
+        }
+    else:
+        return common_params
 
 def process_model(config, model_type, train_set, test_set):
     """Process a single model for training or prediction."""
@@ -13,32 +42,47 @@ def process_model(config, model_type, train_set, test_set):
 
     predict_mapping = config.get('label_to_int', {})
 
-    if config.get('just_predict', False):
-        if model_type == 'setfit':
-            model = SetFitModel.from_pretrained(config['base_model'])
-            references, predictions, prediction_time = predict_setfit(model, test_set, predict_mapping)
+    # Extract hyperparameters
+    hyperparameters = get_hyperparameters(config, model_type)
+
+    # Initialize wandb run
+    with wandb.init(project=config['wandb']['project'], 
+                    entity=config['wandb']['entity'], 
+                    config=hyperparameters):  # Log hyperparameters
+        if config.get('just_predict', False):
+            if model_type == 'setfit':
+                model = SetFitModel.from_pretrained(config['base_model'])
+                references, predictions, prediction_time = predict_setfit(model, test_set, predict_mapping)
+            else:
+                raise ValueError("'just_predict' can only be used with the 'setfit' model type.")
         else:
-            raise ValueError("'just_predict' can only be used with the 'setfit' model type.")
-    else:
-        if model_type == 'setfit':
-            model, training_time = train_setfit_model(config, train_set)
-            references, predictions, prediction_time = predict_setfit(model, test_set, predict_mapping)
-        elif model_type == 'roberta':
-            model, training_time = train_roberta_model(config, train_set, predict_mapping, val_data=test_set)
-            references, predictions, prediction_time = predict_roberta(model, test_set, predict_mapping)
-        else:
-            raise ValueError(f"Unsupported model type: {model_type}")
+            if model_type == 'setfit':
+                model, training_time = train_setfit_model(config, train_set)
+                references, predictions, prediction_time = predict_setfit(model, test_set, predict_mapping)
+            elif model_type == 'roberta':
+                model, training_time = train_roberta_model(config, train_set, predict_mapping, val_data=test_set)
+                references, predictions, prediction_time = predict_roberta(model, test_set, predict_mapping)
+            else:
+                raise ValueError(f"Unsupported model type: {model_type}")
 
-        training_time_sec = training_time.total_seconds()
+            training_time_sec = training_time.total_seconds()
+            wandb.log({"training_time": training_time_sec})
 
-    results = generate_classification_report(references, predictions)
-    results['prediction_time'] = prediction_time.total_seconds()
-    if not config.get('just_predict', False):
-        results['training_time'] = training_time_sec
+        results = generate_classification_report(references, predictions)
+        results['prediction_time'] = prediction_time.total_seconds()
+        if not config.get('just_predict', False):
+            results['training_time'] = training_time_sec
 
-    save_results(results, output_path, config['base_model'])
-    print(f"Results for {config['base_model']}:")
-    print(results)
+        # Log results to wandb
+        wandb.log(results)
+
+        save_results(results, output_path, config['base_model'])
+        print(f"Results for {config['base_model']}:")
+        print(results)
+
+        # Log model to wandb if specified
+        if config['wandb']['log_model']:
+            wandb.save(os.path.join(output_path, "*"))
 
 def main():
     main_config = load_config("config.yaml")

@@ -30,3 +30,9 @@ label_mapping:
   documentation: non-bug
   feature: non-bug
   question: non-bug
+
+# Weights & Biases Configuration
+wandb:
+  project: "cFS-bug-nobug"
+  entity: "collab-uniba"
+  log_model: false

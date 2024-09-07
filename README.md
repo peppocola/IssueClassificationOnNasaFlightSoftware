@@ -77,6 +77,23 @@ Python 3.11 or higher is required to run this project. You can check your Python
 ```bash
 python --version
 ```
+Wandb is used for logging and tracking model performance. To use Wandb, you will need to sign up for an account at [https://wandb.ai/](https://wandb.ai/). After signing up, you will receive an API key that you can use to authenticate your account.
+
+The API key has to be stored in a file named `.env`.
+
+An example `.env` file is shown below:
+
+```YAML
+WANDB_API_KEY=your-api-key
+```
+
+Add to the config.yaml file the following lines:
+
+```YAML
+wandb:
+  project: "your-project-name"
+  entity: "your-username"
+```
 
 ### 1. **Install Dependencies**
 

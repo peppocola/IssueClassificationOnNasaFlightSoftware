@@ -12,6 +12,8 @@ huggingface-hub[cli]
 scikit-learn
 openpyxl
 openai
+wandb
 sentencepiece
 protobuf
 setfit
+python-dotenv
