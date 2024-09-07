@@ -8,7 +8,7 @@ torch
 pandas
 tqdm
 loguru
-huggingface-hub[cli]
+huggingface-hub[cli]==0.23.5
 scikit-learn
 openpyxl
 openai
