@@ -67,7 +67,6 @@ def train_setfit_model(config, train_set, val_data=None):
         args=args,
         train_dataset=train_set,
         eval_dataset=val_data if config['use_validation'] else None,
-        compute_metrics=compute_metrics
     )
 
     start_time = datetime.now()
