@@ -93,6 +93,15 @@ Add to the config.yaml file the following lines:
 wandb:
   project: "your-project-name"
   entity: "your-username"
+  mode: "online" # or "offline"
+```
+
+If the mode is set to "offline", the logs will be saved locally in the logs directory.
+
+You can then sync the runs to the Wandb server by running:
+
+```bash
+wandb sync --sync-all
 ```
 
 ### 1. **Install Dependencies**

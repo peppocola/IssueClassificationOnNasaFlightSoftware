@@ -50,6 +50,7 @@ def process_model(config, model_type, train_set, test_set):
                     entity=config['wandb']['entity'], 
                     config=hyperparameters,
                     mode=config['wandb']['mode'],
+                    dir='./logs'
                     ):  # Log hyperparameters
         if config.get('just_predict', False):
             if model_type == 'setfit':
