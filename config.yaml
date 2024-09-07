@@ -1,20 +1,32 @@
+# Model Configuration
 model_type: "roberta"
-base_model: ["sentence-transformers/all-mpnet-base-v2"]
-output_path: "output"
 random_seed: 42
+
+# Data Paths
 train_path: "data/nasa_train_sample.csv"
 test_path: "data/nasa_test_sample.csv"
-just_predict: False
+add_train: "data/nlbse_23_train.csv"
+
+# Output Configuration
+output_path: "output"
+
+# Prediction Mode
+just_predict: false
+
+# Label Configuration
 label_to_int:
   bug: 0
   non-bug: 1
-merge_train: False
-add_train: "data/nlbse_23_train.csv"
-add_labels: ["bug", "feature", "documentation", "question"]
-map_labels: True
+
+# Additional Data Handling
+merge_train: false
+add_labels: 
+  - "bug"
+
+# Label Mapping
+map_labels: true
 label_mapping:
   bug: bug
   documentation: non-bug
   feature: non-bug
   question: non-bug
-

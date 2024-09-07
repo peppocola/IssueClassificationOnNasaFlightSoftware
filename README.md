@@ -8,6 +8,8 @@ This project provides a framework for training and evaluating text classificatio
 
 The project directory is organized as follows:
 - **config.yaml**: Configuration file for model training and evaluation.
+- **config_roberta**: Configuration file for RoBERTa model training and evaluation.
+- **config_setfit**: Configuration file for SetFit model training and evaluation.
 - **data/**: Contains datasets
   -**.keep**: Placeholder file to ensure the `data` directory is included in version control.
 - **data_processing/** scripts.
@@ -24,6 +26,7 @@ The project directory is organized as follows:
 - **logs/**: Directory for logging information during training and evaluation.
   - **.keep**: Placeholder file to ensure the `logs` directory is included in version control.
 - **main.py**: Main script to run the entire process, from data preprocessing to result saving.
+- **requirements.txt**: List of required packages for the project.
 
 ## Configuration File: `config.yaml`
 
@@ -47,7 +50,6 @@ The `config.yaml` file allows you to configure various aspects of the model trai
 
 ```yaml
 model_type: "roberta"
-base_model: ["sentence-transformers/all-mpnet-base-v2"]
 output_path: "output"
 random_seed: 42
 train_path: "data/nasa_train_sample.csv"
@@ -68,6 +70,13 @@ label_mapping:
 ```
 
 ## Usage
+
+### Prerequisites
+Python 3.11 or higher is required to run this project. You can check your Python version by running:
+
+```bash
+python --version
+```
 
 ### 1. **Install Dependencies**
 
@@ -96,6 +105,8 @@ Results will be saved in the directory specified by `output_path`. Classificatio
 ## File Descriptions
 
 - **`config.yaml`**: Configuration file for setting model parameters, data paths, and other settings.
+- **`config_roberta.yaml`**: Configuration file for RoBERTa model training and evaluation.
+- **`config_setfit.yaml`**: Configuration file for SetFit model training and evaluation.
 - **`data/dataset_utils.py`**: Functions for loading and preprocessing datasets.
 - **`data/text_processing.py`**: Utility functions for text data, including label distribution printing.
 - **`model/model_training.py`**: Functions for training SetFit and RoBERTa models.

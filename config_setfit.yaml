@@ -1,0 +1,18 @@
+# SetFit Model Configuration
+
+# Model
+base_model: "sentence-transformers/paraphrase-mpnet-base-v2"
+
+# Training
+random_seed: 42
+batch_size: [16, 2]
+num_epochs: 1
+num_iterations: 20
+
+# Validation
+use_validation: true
+validation_split: 0.2  # Only used if use_validation is true and no separate validation set is provided
+
+# Output
+output_dir: "./setfit_output"
+save_strategy: "no"
