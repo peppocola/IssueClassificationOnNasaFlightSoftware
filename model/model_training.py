@@ -58,8 +58,8 @@ def train_setfit_model(config, train_set, val_data=None):
         save_strategy=config['save_strategy'],
         seed=config['random_seed'],
         batch_size=tuple(config['batch_size']),
-        num_epochs=config['num_epochs'],
-        num_iterations=config['num_iterations'],
+        num_epochs=int(config['num_epochs']),
+        num_iterations=int(config['num_iterations']),
     )
 
     trainer = SetFitTrainer(
@@ -115,14 +115,14 @@ def train_roberta_model(config, train_set, label_to_int, val_data=None):
     training_args = RobertaTrainingArguments(
         output_dir=config['output_dir'],
         save_strategy=config['save_strategy'],
-        per_device_train_batch_size=config['per_device_train_batch_size'],
-        num_train_epochs=config['num_train_epochs'],
+        per_device_train_batch_size=int(config['per_device_train_batch_size']),
+        num_train_epochs=int(config['num_train_epochs']),
         evaluation_strategy=config['evaluation_strategy'] if config['use_validation'] else "no",
         logging_dir=config['logging_dir'],
         load_best_model_at_end=config['load_best_model_at_end'] if config['use_validation'] else False,
         metric_for_best_model=config['metric_for_best_model'],
-        learning_rate=config['learning_rate'],
-        weight_decay=config['weight_decay'],
+        learning_rate=float(config['learning_rate']),
+        weight_decay=float(config['weight_decay']),
     )
 
     if config['use_custom_loss']:
