@@ -48,7 +48,9 @@ def process_model(config, model_type, train_set, test_set):
     # Initialize wandb run
     with wandb.init(project=config['wandb']['project'], 
                     entity=config['wandb']['entity'], 
-                    config=hyperparameters):  # Log hyperparameters
+                    config=hyperparameters,
+                    mode=config['wandb']['mode'],
+                    ):  # Log hyperparameters
         if config.get('just_predict', False):
             if model_type == 'setfit':
                 model = SetFitModel.from_pretrained(config['base_model'])

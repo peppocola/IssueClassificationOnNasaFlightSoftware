@@ -36,3 +36,4 @@ wandb:
   project: "cFS-bug-nobug"
   entity: "collab-uniba"
   log_model: false
+  mode: "offline"
