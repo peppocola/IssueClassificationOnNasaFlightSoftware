@@ -76,8 +76,16 @@ def process_model(config, model_type, train_set, test_set):
         if not config.get('just_predict', False):
             results['training_time'] = training_time_sec
 
-        # Log results to wandb
-        wandb.log(results)
+        # Log results to wandb so they can be tracked
+        # Unnest the results dictionary for logging
+        result_log = {}
+        for key, value in results.items():
+            if isinstance(value, dict):
+                for k, v in value.items():
+                    result_log[f"{key}_{k}"] = v
+            else:
+                result_log[key] = value
+        wandb.log(result_log)
 
         save_results(results, output_path, config['base_model'])
         print(f"Results for {config['base_model']}:")
