@@ -31,11 +31,13 @@ def compute_metrics(eval_pred):
     logits, labels = eval_pred
     predictions = np.argmax(logits, axis=-1)
     
-    overall_recall = recall_score(labels, predictions, average='macro')
+    macro_recall = recall_score(labels, predictions, average='macro')
+    micro_recall = recall_score(labels, predictions, average='micro')
     class_recall = recall_score(labels, predictions, average=None)
     
     recall_dict = {f"recall_class_{i}": recall for i, recall in enumerate(class_recall)}
-    recall_dict["recall_macro"] = overall_recall
+    recall_dict["recall_macro"] = macro_recall
+    recall_dict["recall_micro"] = micro_recall
     
     return recall_dict
 
