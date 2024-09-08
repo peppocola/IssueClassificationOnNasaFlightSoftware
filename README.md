@@ -45,6 +45,12 @@ The `config.yaml` file allows you to configure various aspects of the model trai
 - **label_mapping**: Dictionary for mapping original labels to target labels (used if `map_labels` is `True`).
 - **label_to_int**: Dictionary for mapping labels to integers and vice versa.
 - **model_type**: Specifies the model type to use. Options are `"setfit"` and `"roberta"`.
+- **wandb**: Configuration for logging and tracking model performance with Wandb.
+  - **project**: Name of the project in Wandb.
+  - **entity**: Username of the Wandb account.
+  - **mode**: Logging mode, either `"online"` or `"offline"`.
+- **save_predictions**: If `True`, save the predictions to a CSV file.
+- **save_predictions_path**: Path to save the predictions CSV file.
 
 ### Example Configuration
 

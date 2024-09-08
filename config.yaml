@@ -37,3 +37,7 @@ wandb:
   entity: "collab-uniba"
   log_model: false
   mode: "offline"
+
+# Output csv with ground truth and predictions
+save_predictions: false
+save_predictions_path: "output/predictions.csv"

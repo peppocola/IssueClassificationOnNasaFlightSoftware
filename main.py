@@ -4,7 +4,7 @@ from config.config_loader import load_config
 from data_processing.dataset_utils import preprocess_dataset, print_label_distribution
 from model.model_training import train_setfit_model, train_roberta_model
 from model.model_prediction import predict_setfit, predict_roberta
-from evaluation.result_saving import save_results, generate_classification_report
+from evaluation.result_saving import save_results, generate_classification_report, save_csv_results
 from setfit import SetFitModel
 
 def get_hyperparameters(config, model_type):
@@ -86,6 +86,10 @@ def process_model(config, model_type, train_set, test_set):
         # Log model to wandb if specified
         if config['wandb']['log_model']:
             wandb.save(os.path.join(output_path, "*"))
+        
+        # Save the input text with ground truth and predicted labels
+        if config['save_csv_results']:
+            save_csv_results(test_set, references, predictions, output_path)
 
 def main():
     main_config = load_config("config.yaml")
