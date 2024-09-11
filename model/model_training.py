@@ -166,6 +166,15 @@ def train_roberta_model(config, train_set, label_to_int, val_data=None):
     end_time = datetime.now()
     training_time = end_time - start_time
     print(f"Training time for {config['base_model']}: {training_time}")
-    # print the number of epochs for the best model
-    print(f"Best model trained for {trainer.state.best_model_checkpoint['epoch']} epochs")
+
+    if config['use_validation'] and config['load_best_model_at_end']:
+        best_model_path = trainer.state.best_model_checkpoint
+        if best_model_path:
+            epoch_number = int(best_model_path.split('-')[-1])
+            print(f"Best model was found at epoch {epoch_number}")
+        else:
+            print("No best model checkpoint was saved.")
+    else:
+        print(f"Model trained for {config['num_train_epochs']} epochs")
+
     return classifier, training_time
