@@ -7,6 +7,7 @@ import torch
 from sklearn.metrics import recall_score
 from sklearn.model_selection import train_test_split
 import numpy as np
+from sklearn.metrics import f1_score
 
 def load_config(config_path):
     with open(config_path, 'r') as file:
@@ -34,12 +35,24 @@ def compute_metrics(eval_pred):
     macro_recall = recall_score(labels, predictions, average='macro')
     micro_recall = recall_score(labels, predictions, average='micro')
     class_recall = recall_score(labels, predictions, average=None)
-    
+    f1_macro = f1_score(labels, predictions, average='macro')
+    f1_micro = f1_score(labels, predictions, average='micro')
+    class_f1 = f1_score(labels, predictions, average=None)
+
     recall_dict = {f"recall_class_{i}": recall for i, recall in enumerate(class_recall)}
     recall_dict["recall_macro"] = macro_recall
     recall_dict["recall_micro"] = micro_recall
+
+    f1_dict = {f"f1_class_{i}": f1 for i, f1 in enumerate(class_f1)}
+    f1_dict["f1_macro"] = f1_macro
+    f1_dict["f1_micro"] = f1_micro
+
+    metrics_dict = {
+        **recall_dict,
+        **f1_dict
+    }
     
-    return recall_dict
+    return metrics_dict
 
 def split_dataset(dataset, validation_split):
     train_idx, val_idx = train_test_split(
