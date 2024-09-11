@@ -41,7 +41,7 @@ def merge_datasets(ds1, ds2):
 
     return concatenate_datasets([ds1, ds2])
 
-def preprocess_dataset(config):
+def preprocess_dataset(config, merge_text_func=None):
     """Preprocesses the dataset according to the config."""
     ds = load_dataset(config['train_path'], config['test_path'], config['random_seed'])
     train_set = ds['train'] if 'train' in ds else None
@@ -50,6 +50,25 @@ def preprocess_dataset(config):
     if train_set is None and test_set is None:
         raise ValueError("Both train_set and test_set are None. At least one must be provided for training or testing.")
 
+    # Merge text columns if specified and merged_text_column doesn't exist in both sets
+    if 'text_columns' in config:
+        if (train_set is None or config['merged_text_column'] not in train_set.column_names) and \
+           (test_set is None or config['merged_text_column'] not in test_set.column_names):
+            def default_merge(texts):
+                return '\n'.join(str(text) for text in texts if text)
+            
+            merge_func = merge_text_func or default_merge
+            
+            for dataset in (train_set, test_set):
+                if dataset is not None:
+                    merged_texts = []
+                    for i in range(len(dataset)):
+                        texts = [dataset[col][i] for col in config['text_columns']]
+                        merged_texts.append(merge_func(texts))
+                    
+                    dataset = dataset.add_column(config['merged_text_column'], merged_texts)
+                    dataset = dataset.remove_columns(config['text_columns'])
+                
     if config.get('map_labels', False):
         label_mapping = config.get('label_mapping', {})
         train_set = map_labels_in_dataset(train_set, label_mapping)

@@ -1,13 +1,16 @@
 import yaml
-from transformers import RobertaTokenizer, RobertaForSequenceClassification, Trainer as RobertaTrainer, TrainingArguments as RobertaTrainingArguments, RobertaConfig, DataCollatorWithPadding, TextClassificationPipeline
+from transformers import (
+    RobertaTokenizer, RobertaForSequenceClassification, Trainer as RobertaTrainer,
+    TrainingArguments as RobertaTrainingArguments, RobertaConfig, DataCollatorWithPadding,
+    TextClassificationPipeline
+)
 from setfit import SetFitModel, Trainer as SetFitTrainer, TrainingArguments as SetFitTrainingArguments
 from datasets import Dataset
 from datetime import datetime
 import torch
-from sklearn.metrics import recall_score
+from sklearn.metrics import recall_score, f1_score
 from sklearn.model_selection import train_test_split
 import numpy as np
-from sklearn.metrics import f1_score
 
 def load_config(config_path):
     with open(config_path, 'r') as file:
@@ -32,27 +35,19 @@ def compute_metrics(eval_pred):
     logits, labels = eval_pred
     predictions = np.argmax(logits, axis=-1)
     
-    macro_recall = recall_score(labels, predictions, average='macro')
-    micro_recall = recall_score(labels, predictions, average='micro')
-    class_recall = recall_score(labels, predictions, average=None)
-    f1_macro = f1_score(labels, predictions, average='macro')
-    f1_micro = f1_score(labels, predictions, average='micro')
-    class_f1 = f1_score(labels, predictions, average=None)
-
-    recall_dict = {f"recall_class_{i}": recall for i, recall in enumerate(class_recall)}
-    recall_dict["recall_macro"] = macro_recall
-    recall_dict["recall_micro"] = micro_recall
-
-    f1_dict = {f"f1_class_{i}": f1 for i, f1 in enumerate(class_f1)}
-    f1_dict["f1_macro"] = f1_macro
-    f1_dict["f1_micro"] = f1_micro
-
-    metrics_dict = {
-        **recall_dict,
-        **f1_dict
-    }
+    metrics = {}
+    for metric_name, metric_func in [('recall', recall_score), ('f1', f1_score)]:
+        macro = metric_func(labels, predictions, average='macro')
+        micro = metric_func(labels, predictions, average='micro')
+        class_scores = metric_func(labels, predictions, average=None)
+        
+        metrics.update({
+            f"{metric_name}_macro": macro,
+            f"{metric_name}_micro": micro,
+            **{f"{metric_name}_class_{i}": score for i, score in enumerate(class_scores)}
+        })
     
-    return metrics_dict
+    return metrics
 
 def split_dataset(dataset, validation_split):
     train_idx, val_idx = train_test_split(
