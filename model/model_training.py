@@ -166,5 +166,6 @@ def train_roberta_model(config, train_set, label_to_int, val_data=None):
     end_time = datetime.now()
     training_time = end_time - start_time
     print(f"Training time for {config['base_model']}: {training_time}")
-
+    # print the number of epochs for the best model
+    print(f"Best model trained for {trainer.state.best_model_checkpoint['epoch']} epochs")
     return classifier, training_time
