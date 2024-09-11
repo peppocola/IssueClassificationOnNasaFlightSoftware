@@ -16,9 +16,6 @@ def load_config(config_path):
     with open(config_path, 'r') as file:
         return yaml.safe_load(file)
 
-roberta_config = load_config('config_roberta.yaml')
-setfit_config = load_config('config_setfit.yaml')
-
 class CustomRobertaTrainer(RobertaTrainer):
     def __init__(self, *args, custom_loss=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -49,17 +46,17 @@ def compute_metrics(eval_pred):
     
     return metrics
 
-def split_dataset(dataset, validation_split):
+def split_dataset(dataset, validation_split, random_seed):
     train_idx, val_idx = train_test_split(
         range(len(dataset)),
         test_size=validation_split,
-        random_state=roberta_config['random_seed']
+        random_state=random_seed
     )
     return dataset.select(train_idx), dataset.select(val_idx)
 
 def train_setfit_model(config, train_set, val_data=None):
     if config['use_validation'] and val_data is None:
-        train_set, val_data = split_dataset(train_set, config['validation_split'])
+        train_set, val_data = split_dataset(train_set, config['validation_split'], config['random_seed'])
 
     model = SetFitModel.from_pretrained(config['base_model'])
 
