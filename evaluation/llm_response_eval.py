@@ -6,6 +6,7 @@ from sklearn.metrics import classification_report
 import pandas as pd
 from openpyxl import Workbook
 import argparse
+import sys
 
 sys.path.append('externals/sklearn-cls-report2excel')
 from convert_report2excel import convert_report2excel
