@@ -96,8 +96,8 @@ def process_model(config, model_type, train_set, test_set):
             wandb.save(os.path.join(output_path, "*"))
         
         # Save the input text with ground truth and predicted labels
-        if config['save_csv_results']:
-            save_csv_results(test_set, references, predictions, output_path)
+        if config['save_predictions']:
+            save_csv_results(test_set, references, predictions, config['save_predictions_path'])
 
 def main():
     main_config = load_config("config.yaml")
