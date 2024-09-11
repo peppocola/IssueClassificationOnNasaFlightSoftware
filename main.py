@@ -1,8 +1,7 @@
 import os
 import wandb
 from config.config_loader import load_config
-from data_processing.dataset_utils import preprocess_dataset
-from data_processing.text_processing import print_label_distribution
+from data_processing.dataset_utils import preprocess_dataset, print_label_distribution
 from model.model_training import train_setfit_model, train_roberta_model
 from model.model_prediction import predict_setfit, predict_roberta
 from model.model_prompting import process_llm_prompts
