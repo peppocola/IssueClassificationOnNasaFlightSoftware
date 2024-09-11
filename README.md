@@ -141,6 +141,19 @@ wandb sync --sync-all
 
 For OpenAI models, ensure that the `is_openai` flag is set to `true` in your configuration, and that you've provided your OpenAI organization ID in the `openai_organization` field.
 
+### 0. **Clone the repository**
+
+```bash
+git clone https://github.com/peppocola/NasaExperiments.git
+```
+
+Don't forget to initialize and update the submodules:
+
+```bash
+git submodule init
+git submodule update
+```
+
 ### 1. **Install Dependencies**
 
 Ensure all required packages are installed. Use `pip` to install dependencies:
