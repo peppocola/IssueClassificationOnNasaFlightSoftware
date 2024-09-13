@@ -59,25 +59,30 @@ def preprocess_dataset(config, merge_text_func=None):
             
             merge_func = merge_text_func or default_merge
             
-            for dataset in (train_set, test_set):
-                if dataset is not None:
-                    merged_texts = []
-                    for i in range(len(dataset)):
-                        texts = [dataset[col][i] for col in config['text_columns']]
-                        merged_texts.append(merge_func(texts))
-                    
-                    dataset = dataset.add_column(config['merged_text_column'], merged_texts)
-                    dataset = dataset.remove_columns(config['text_columns'])
-                
-    if config.get('map_labels', False):
-        label_mapping = config.get('label_mapping', {})
-        train_set = map_labels_in_dataset(train_set, label_mapping)
-        if test_set:
-            test_set = map_labels_in_dataset(test_set, label_mapping)
+            if train_set is not None:
+                train_set = merge_text_columns(train_set, config['text_columns'], config['merged_text_column'], merge_func)
+            
+            if test_set is not None:
+                test_set = merge_text_columns(test_set, config['text_columns'], config['merged_text_column'], merge_func)
 
-    if config.get('merge_train', False):
-        add_ds = load_dataset(config['add_train'], None, config['random_seed'])['train']
-        filtered_add_ds = filter_dataset_by_labels(add_ds, config['add_labels'])
-        train_set = merge_datasets(train_set, filtered_add_ds)
+    # Ensure 'text' and 'label' columns are present
+    if train_set is not None:
+        train_set = ensure_required_columns(train_set, config)
+    
+    if test_set is not None:
+        test_set = ensure_required_columns(test_set, config)
 
     return train_set, test_set
+
+def merge_text_columns(dataset, text_columns, merged_column, merge_func):
+    merged_texts = [merge_func([dataset[col][i] for col in text_columns]) for i in range(len(dataset))]
+    dataset = dataset.add_column(merged_column, merged_texts)
+    dataset = dataset.remove_columns(text_columns)
+    return dataset
+
+def ensure_required_columns(dataset, config):
+    if 'text' not in dataset.column_names and config['merged_text_column'] in dataset.column_names:
+        dataset = dataset.rename_column(config['merged_text_column'], 'text')
+    if 'label' not in dataset.column_names and 'label' in config.get('label_mapping', {}):
+        dataset = dataset.rename_column(config['label_mapping']['label'], 'label')
+    return dataset
