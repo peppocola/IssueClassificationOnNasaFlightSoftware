@@ -16,15 +16,21 @@ def print_label_distribution(dataset):
         print(f"Label {label}: {count} examples")
 
 
-def load_dataset(train_path, test_path=None, random_seed=42):
-    """Loads and shuffles train and test datasets."""
-    data_files = {"train": train_path}
-    if test_path:
-        data_files["test"] = test_path
+def load_dataset(train_path=None, test_path=None, random_seed=42):
+    """Loads and shuffles train and test datasets separately."""
+    if train_path is None and test_path is None:
+        raise ValueError("At least one of train_path or test_path must be provided.")
 
-    ds = Dataset.from_csv(data_files)
-    ds = ds.shuffle(seed=random_seed)
-    return ds
+    train_ds = None
+    test_ds = None
+
+    if train_path:
+        train_ds = Dataset.from_csv(train_path)
+
+    if test_path:
+        test_ds = Dataset.from_csv(test_path)
+
+    return {"train": train_ds, "test": test_ds}
 
 def filter_dataset_by_labels(ds, labels):
     """Filters dataset by specific labels."""
@@ -52,18 +58,16 @@ def preprocess_dataset(config, merge_text_func=None):
 
     # Merge text columns if specified and merged_text_column doesn't exist in both sets
     if 'text_columns' in config:
-        if (train_set is None or config['merged_text_column'] not in train_set.column_names) and \
-           (test_set is None or config['merged_text_column'] not in test_set.column_names):
-            def default_merge(texts):
-                return '\n'.join(str(text) for text in texts if text)
-            
-            merge_func = merge_text_func or default_merge
-            
-            if train_set is not None:
-                train_set = merge_text_columns(train_set, config['text_columns'], config['merged_text_column'], merge_func)
-            
-            if test_set is not None:
-                test_set = merge_text_columns(test_set, config['text_columns'], config['merged_text_column'], merge_func)
+        def default_merge(texts):
+            return '\n'.join(str(text) for text in texts if text)
+        
+        merge_func = merge_text_func or default_merge
+        
+        if train_set is not None and config['merged_text_column'] not in train_set.column_names:
+            train_set = merge_text_columns(train_set, config['text_columns'], config['merged_text_column'], merge_func)
+        
+        if test_set is not None and config['merged_text_column'] not in test_set.column_names:
+            test_set = merge_text_columns(test_set, config['text_columns'], config['merged_text_column'], merge_func)
 
     # Ensure 'text' and 'label' columns are present
     if train_set is not None:
