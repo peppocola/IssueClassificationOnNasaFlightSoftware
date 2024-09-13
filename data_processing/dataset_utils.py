@@ -82,10 +82,13 @@ def merge_text_columns(dataset, text_columns, merged_column, merge_func):
     return dataset
 
 def ensure_required_columns(dataset, config):
-    if 'text' not in dataset.column_names and config['merged_text_column'] in dataset.column_names:
-        dataset = dataset.rename_column(config['merged_text_column'], 'text')
-    else:
-        raise ValueError("Text column not found in dataset.")
+    if 'text' not in dataset.column_names:
+        if config['merged_text_column'] in dataset.column_names:
+            dataset = dataset.rename_column(config['merged_text_column'], 'text')
+        else:
+            raise ValueError("Text column not found in dataset.")
+    
     if 'label' not in dataset.column_names:
         raise ValueError("Label column not found in dataset.")
+    
     return dataset
