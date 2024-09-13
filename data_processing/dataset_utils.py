@@ -65,16 +65,13 @@ def preprocess_dataset(config, merge_text_func=None):
         
         if train_set is not None and config['merged_text_column'] not in train_set.column_names:
             train_set = merge_text_columns(train_set, config['text_columns'], config['merged_text_column'], merge_func)
+            train_set = ensure_required_columns(train_set, config)
+            train_set = map_labels_in_dataset(train_set, config['label_mapping'])
         
         if test_set is not None and config['merged_text_column'] not in test_set.column_names:
             test_set = merge_text_columns(test_set, config['text_columns'], config['merged_text_column'], merge_func)
-
-    # Ensure 'text' and 'label' columns are present
-    if train_set is not None:
-        train_set = ensure_required_columns(train_set, config)
-    
-    if test_set is not None:
-        test_set = ensure_required_columns(test_set, config)
+            test_set = ensure_required_columns(test_set, config)
+            test_set = map_labels_in_dataset(test_set, config['label_mapping'])
 
     return train_set, test_set
 
@@ -87,6 +84,8 @@ def merge_text_columns(dataset, text_columns, merged_column, merge_func):
 def ensure_required_columns(dataset, config):
     if 'text' not in dataset.column_names and config['merged_text_column'] in dataset.column_names:
         dataset = dataset.rename_column(config['merged_text_column'], 'text')
-    if 'label' not in dataset.column_names and 'label' in config.get('label_mapping', {}):
-        dataset = dataset.rename_column(config['label_mapping']['label'], 'label')
+    else:
+        raise ValueError("Text column not found in dataset.")
+    if 'label' not in dataset.column_names:
+        raise ValueError("Label column not found in dataset.")
     return dataset

@@ -1,8 +1,9 @@
 def map_labels_in_dataset(dataset, label_mapping):
     """Applies the label mapping to a dataset."""
-    def map_label(example):
-        if example['label'] in label_mapping:
-            example['label'] = label_mapping[example['label']]
-        return example
-
-    return dataset.map(map_label)
+    return dataset.map(lambda example: 
+                            {
+                                **example,
+                                'label': label_mapping.get(example['label'],
+                                example['label'])
+                            }
+                    )
