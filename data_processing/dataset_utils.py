@@ -1,6 +1,5 @@
 from datasets import Dataset, concatenate_datasets
 from data_processing.text_processing import ensure_text_column
-from data_processing.label_mapping import map_labels_in_dataset
 from collections import Counter
 from imblearn.under_sampling import RandomUnderSampler
 
