@@ -56,7 +56,7 @@ def preprocess_dataset(config, merge_text_func=None):
     if train_set is None and test_set is None:
         raise ValueError("Both train_set and test_set are None. At least one must be provided for training or testing.")
 
-    # Merge text columns if specified and merged_text_column doesn't exist in both sets
+    # Merge text columns if specified
     if 'text_columns' in config:
         def default_merge(texts):
             return '\n'.join(str(text) for text in texts if text)
@@ -66,12 +66,17 @@ def preprocess_dataset(config, merge_text_func=None):
         if train_set is not None and config['merged_text_column'] not in train_set.column_names:
             train_set = merge_text_columns(train_set, config['text_columns'], config['merged_text_column'], merge_func)
             train_set = ensure_required_columns(train_set, config)
-            train_set = map_labels_in_dataset(train_set, config['label_mapping'])
         
         if test_set is not None and config['merged_text_column'] not in test_set.column_names:
             test_set = merge_text_columns(test_set, config['text_columns'], config['merged_text_column'], merge_func)
             test_set = ensure_required_columns(test_set, config)
-            test_set = map_labels_in_dataset(test_set, config['label_mapping'])
+
+    # Apply label mapping to both train and test sets
+    if train_set is not None and config['label_mapping']:
+        train_set = map_labels_in_dataset(train_set, config['label_mapping'])
+    
+    if test_set is not None and config['label_mapping']:
+        test_set = map_labels_in_dataset(test_set, config['label_mapping'])
 
     return train_set, test_set
 
