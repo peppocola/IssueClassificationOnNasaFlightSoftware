@@ -38,6 +38,9 @@ label_mapping:
   feature: non-bug
   question: non-bug
 
+# Data balancing
+balance_data: false #All classes will have the same number of samples as the minority class
+
 # Weights & Biases Configuration
 wandb:
   project: "cFS-bug-nobug"

@@ -2,6 +2,7 @@ from datasets import Dataset, concatenate_datasets
 from data_processing.text_processing import ensure_text_column
 from data_processing.label_mapping import map_labels_in_dataset
 from collections import Counter
+from imblearn.under_sampling import RandomUnderSampler
 
 def print_label_distribution(dataset):
     if 'label' not in dataset.column_names:
@@ -47,6 +48,11 @@ def merge_datasets(ds1, ds2):
 
     return concatenate_datasets([ds1, ds2])
 
+def balance_dataset(ds):
+    """Balances the dataset to the minority class."""
+    rus = RandomUnderSampler(random_state=42, sampling_strategy='not minority')
+    return Dataset.from_pandas(rus.fit_resample(ds.to_pandas()))
+
 def preprocess_dataset(config, merge_text_func=None):
     """Preprocesses the dataset according to the config."""
     ds = load_dataset(config['train_path'], config['test_path'], config['random_seed'])
@@ -77,6 +83,9 @@ def preprocess_dataset(config, merge_text_func=None):
     
     if test_set is not None and config['map_labels']:
         test_set = map_labels_in_dataset(test_set, config['label_mapping'])
+
+    if config['balance_data']:
+        train_set = balance_dataset(train_set)
 
     return train_set, test_set
 
