@@ -10,7 +10,7 @@ class PromptGenerator:
         with open(config_path, 'r') as file:
             self.params = yaml.safe_load(file)
         
-        self.dataset = self.load_dataset(self.params['data_path'])
+        self.dataset = self.load_dataset(self.params['test_path'])
         self.template = self.load_prompt_template(self.params['template_path'])
         self.config = self.load_llm_config(self.params['config_llm_path'])
         self.prompts = {}
@@ -58,30 +58,7 @@ class PromptGenerator:
         """
         with open(config_path, 'r') as file:
             return yaml.safe_load(file)
-
-    def clean_prompt_template(self) -> Dict[str, Any]:
-        """
-        Clean the prompt template by removing unused fields based on the configuration.
-
-        Args:
-            template (Dict[str, Any]): The original prompt template.
-            config (Dict[str, Any]): The configuration dictionary.
-
-        Returns:
-            Dict[str, Any]: The cleaned prompt template.
-        """
-        cleaned_template = self.template.copy()
         
-        # Remove system message if not used
-        if not self.config['use_system_message']:
-            cleaned_template.pop('system', None)
-        
-        # Remove examples if few-shot prompting is not used
-        if not self.config['few_shot_prompt']:
-            cleaned_template.pop('examples', None)
-        
-        return cleaned_template
-
     def dataset_iterator(self):
         """
         Create an iterator for either a pandas DataFrame or a Hugging Face Dataset.
@@ -104,7 +81,6 @@ class PromptGenerator:
         Select examples for few-shot prompting from the training dataset.
 
         Args:
-        trainset_path (str): Path to the training dataset CSV file.
         num_samples_per_class (int): Number of samples to select for each class.
         random_sampling (bool): If True, use random sampling. If False, use the provided sampling function.
         sampling_function (Callable, optional): A function to use for sampling when random_sampling is False.
@@ -113,7 +89,7 @@ class PromptGenerator:
         Returns:
         list: A list of selected examples for few-shot prompting.
         """
-        train_data = pd.read_csv(self.params['trainset_path'])
+        train_data = pd.read_csv(self.params['train_path'])
         unique_labels = train_data['label'].unique()
         selected_examples = []
 
@@ -138,19 +114,49 @@ class PromptGenerator:
 
         return selected_examples
 
-    def craft_prompt(self, replacements: Dict[str, str]) -> str:
+    def craft_prompt(self, replacements: Dict[str, str]) -> Dict[str, str]:
         """
-        Craft a prompt by replacing placeholders in the template with provided values.
+        Craft a prompt by replacing placeholders with provided values.
 
         Args:
-            template (Dict[str, str]): The prompt template.
             replacements (Dict[str, str]): Dictionary of placeholder replacements.
 
         Returns:
-            str: The crafted prompt.
+            Dict[str, str]: A dictionary containing the system message and the prompt.
         """
+        prompt_parts = []
+
+        # Add task (always first)
+        prompt_parts.append(self.template['task'])
+        
+        # Add label explanations if used
+        if self.config['use_label_explanation'] and 'label_explanations' in self.template:
+            prompt_parts.append(self.template['label_explanations'])
+
+        # Add examples if few-shot prompting is used
+        if self.config['few_shot_prompt'] and 'examples' in self.template:
+            few_shot_examples = self.select_few_shot_examples(
+                num_samples_per_class=self.config.get('n_shots', 1),
+                random_sampling=True,
+                seed=self.config['random_seed']
+            )
+            examples_text = "\n\n".join([self.replace_placeholders(self.template['example'], ex) for ex in few_shot_examples])
+            prompt_parts.append(self.template['examples'].format(examples=examples_text))
+
+        # Add format instructions
+        prompt_parts.append(self.template['format_instructions'])
+
+        # Add example
         example = self.replace_placeholders(self.template['example'], replacements)
-        return '\n'.join([self.template['task'], self.template['label_explanations'], example, self.template['format_instructions'], self.template['output']])
+        prompt_parts.append(example)
+
+        # Add output
+        prompt_parts.append(self.template['output'])
+
+        return {
+            "system": self.template['system'] if self.config['use_system_message'] and 'system' in self.template else '',
+            "prompt": '\n\n'.join(prompt_parts)
+        }
 
     def replace_placeholders(self, template: str, replacements: Dict[str, str]) -> str:
         """
@@ -167,15 +173,12 @@ class PromptGenerator:
         return template.format(**replacements)
 
     def generate_prompts(self) -> None:
-        cleaned_template = self.clean_prompt_template()
-        
         for index, row in tqdm(self.dataset_iterator()):
             replacements = {column: row[column] for column in self.params['column_names']}
             example_to_classify = dict(row) if isinstance(self.dataset, HFDataset) else row.to_dict()
-            crafted_prompt = self.craft_prompt(cleaned_template, replacements, self.config, self.params['trainset_path'], example_to_classify)
+            crafted_prompt = self.craft_prompt(replacements)
             test_pair = {
-                'prompt': crafted_prompt['prompt'],
-                'system': crafted_prompt['system'],
+                **crafted_prompt,
                 'target': row[self.params['target_column']]
             }
             self.prompts[index] = test_pair
