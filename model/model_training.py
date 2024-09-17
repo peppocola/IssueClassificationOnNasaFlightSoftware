@@ -100,7 +100,11 @@ def train_roberta_model(config, train_set, label_to_int, val_data=None):
         return tokenizer(examples['text'], truncation=config['truncation'], padding=config['padding'], max_length=config['max_length'])
 
     tokenizer = RobertaTokenizer.from_pretrained(config['base_model'])
-    model_config = RobertaConfig.from_pretrained(config['base_model'], num_labels=config['num_labels'])
+    
+    # Calculate the number of unique labels
+    num_labels = len(set(train_set['label']))
+    
+    model_config = RobertaConfig.from_pretrained(config['base_model'], num_labels=num_labels)
     model = RobertaForSequenceClassification(config=model_config)
 
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)

@@ -2,7 +2,6 @@
 
 # Model
 base_model: "roberta-base"
-num_labels: 2
 
 # Training
 random_seed: 42
