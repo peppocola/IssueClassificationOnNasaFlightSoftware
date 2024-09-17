@@ -72,10 +72,10 @@ def preprocess_dataset(config, merge_text_func=None):
             test_set = ensure_required_columns(test_set, config)
 
     # Apply label mapping to both train and test sets
-    if train_set is not None and config['label_mapping']:
+    if train_set is not None and config['map_labels']:
         train_set = map_labels_in_dataset(train_set, config['label_mapping'])
     
-    if test_set is not None and config['label_mapping']:
+    if test_set is not None and config['map_labels']:
         test_set = map_labels_in_dataset(test_set, config['label_mapping'])
 
     return train_set, test_set
