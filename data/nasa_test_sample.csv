@@ -44,7 +44,7 @@ On 64-bit platforms which require self-alignment (e.g. x86_64, aarch64), the pre
 Note that unlike the various address values in `CFE_ES_AppInfo_t`, the actual value of these handles is needed on the ground for use in the ES ""send MemPool stats"" command, which takes a handle as its argument. In addition, these telemetry structures don't have a field indicating the validity of the handle.
 
 Both of these factors suggest the fix accepted by the CCB for `CFE_ES_AppInfo_t`, populating the fields with the low bytes of the value and marking them invalid when the fields are too small to hold the actual value, may not be viable for these structures."
-feature,"Remove old MKS flags from comments $Id, $Date, $Revision, $Log, etc all no longer useful and slightly misleading since they don't get updated."
+question,"Remove old MKS flags from comments $Id, $Date, $Revision, $Log, etc all no longer useful and slightly misleading since they don't get updated."
 feature,"CFE_TBL_ERR_FILE_NOT_FOUND error defined but not used **Is your feature request related to a problem? Please describe.**
 This is documented as a return code from `CFE_TBL_Load` however this function actually returns `CFE_TBL_ERR_ACCESS` when it cannot open the file.  This ""file not found"" status code is not used- and it cannot be used - because OS_OpenCreate does not really differentiate between the file not existing and existing but not having permission to open it.
 

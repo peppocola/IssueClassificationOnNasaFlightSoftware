@@ -1,5 +1,5 @@
 label,text
-bug,"Exiting an Application Creates an Application with an Unknown State (GSFC DCR 23035) ES will continually send out event message #79 - ""ES_ProcControlReq: Unknown State ( %d ) Application %s"", with the unknown state set to 1, when an application exits via the CFE_ES_ExitApp API function call. See attached email thread for more details."
+question,"Exiting an Application Creates an Application with an Unknown State (GSFC DCR 23035) ES will continually send out event message #79 - ""ES_ProcControlReq: Unknown State ( %d ) Application %s"", with the unknown state set to 1, when an application exits via the CFE_ES_ExitApp API function call. See attached email thread for more details."
 feature,"Header structure name assumptions limit MSG abstraction capability **Is your feature request related to a problem? Please describe.**
 The MSG library is supposed to offer a complete abstraction of the header format, but in practice there are still some direct references to header structure members in Caelum which limit this capability.
 
