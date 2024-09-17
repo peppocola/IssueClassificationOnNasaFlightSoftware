@@ -143,12 +143,12 @@ class PromptGenerator:
             examples_text = "\n\n".join([self.replace_placeholders(self.template['example'], ex) for ex in few_shot_examples])
             prompt_parts.append(self.template['examples'].format(examples=examples_text))
 
-        # Add format instructions
-        prompt_parts.append(self.template['format_instructions'])
-
         # Add example
         example = self.replace_placeholders(self.template['example'], replacements)
         prompt_parts.append(example)
+
+        #Add format instructions
+        prompt_parts.append(self.template['format_instructions'])
 
         # Add output
         prompt_parts.append(self.template['output'])

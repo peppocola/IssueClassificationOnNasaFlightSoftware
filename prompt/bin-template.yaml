@@ -1,5 +1,5 @@
 system: |
-  You are an AI assistant specialized in analyzing GitHub issues and assigning appropriate labels. Your task is to carefully review the provided issue title and body, and then determine whether the issue should be labeled as a "bug" or "non-bug". Use your knowledge of software development, issue tracking, and the provided label explanations to make an informed decision. Provide a clear, step-by-step reasoning for your label assignment to ensure transparency in your decision-making process.
+  You are an AI assistant specialized in analyzing GitHub issues and assigning appropriate labels. 
 
 task: |
   You are provided with a GitHub issue in this format:
