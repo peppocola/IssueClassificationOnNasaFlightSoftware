@@ -171,7 +171,7 @@ class PromptGenerator:
 
     def generate_prompts(self) -> None:
         for index, row in tqdm(self.dataset_iterator()):
-            replacements = {column: row[column] for column in self.config['column_names']}
+            replacements = {column: row[column] for column in self.config['text_columns']}
             example_to_classify = dict(row) if isinstance(self.dataset, HFDataset) else row.to_dict()
             crafted_prompt = self.craft_prompt(replacements)
             test_pair = {
