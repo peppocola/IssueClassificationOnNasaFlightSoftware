@@ -6,10 +6,7 @@ import yaml
 import json
 
 class PromptGenerator:
-    def __init__(self, config_path: str = "config/config.yaml"):
-        with open(config_path, 'r') as file:
-            self.params = yaml.safe_load(file)
-        
+    def __init__(self, config: Dict):        
         self.dataset = self.load_dataset(self.params['test_path'])
         self.template = self.load_prompt_template(self.params['template_path'])
         self.config = self.load_llm_config(self.params['config_llm_path'])
