@@ -110,9 +110,8 @@ class LLMInference(BaseLLMInference):
                 for prompt_id, prompt in prompts.items():
                     conversation = []
                     if self.config.get('system_message'):
-                        conversation.append({"role": "system", "content": self.config['system_message']})
-                    conversation.append({"role": "user", "content": prompt})
-
+                        conversation.append({"role": "system", "content": prompt['system']})
+                    conversation.append({"role": "user", "content": prompt['prompt']})
                     input_ids = self.tokenizer.apply_chat_template(conversation, return_tensors="pt").to("cuda")
 
                     if input_ids.shape[1] > self.config.get('max_input_token_length', 2048):
