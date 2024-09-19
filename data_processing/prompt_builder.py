@@ -6,10 +6,10 @@ import yaml
 import json
 
 class PromptGenerator:
-    def __init__(self, config: Dict):        
-        self.dataset = self.load_dataset(self.params['test_path'])
-        self.template = self.load_prompt_template(self.params['template_path'])
-        self.config = self.load_llm_config(self.params['config_llm_path'])
+    def __init__(self, config: Dict):   
+        self.config = config
+        self.dataset = self.load_dataset(self.config['test_path'])
+        self.template = self.load_prompt_template(self.config['template_path'])
         self.prompts = {}
 
     def load_dataset(self, data_path: str) -> Union[pd.DataFrame, HFDataset]:
@@ -86,7 +86,7 @@ class PromptGenerator:
         Returns:
         list: A list of selected examples for few-shot prompting.
         """
-        train_data = pd.read_csv(self.params['train_path'])
+        train_data = pd.read_csv(self.config['train_path'])
         unique_labels = train_data['label'].unique()
         selected_examples = []
 
@@ -171,17 +171,17 @@ class PromptGenerator:
 
     def generate_prompts(self) -> None:
         for index, row in tqdm(self.dataset_iterator()):
-            replacements = {column: row[column] for column in self.params['column_names']}
+            replacements = {column: row[column] for column in self.config['column_names']}
             example_to_classify = dict(row) if isinstance(self.dataset, HFDataset) else row.to_dict()
             crafted_prompt = self.craft_prompt(replacements)
             test_pair = {
                 **crafted_prompt,
-                'target': row[self.params['target_column']]
+                'target': row[self.config['target_column']]
             }
             self.prompts[index] = test_pair
 
     def save_prompts(self) -> None:
-        with open(self.params['prompts_path'], 'w') as file:
+        with open(self.config['prompts_path'], 'w') as file:
             json.dump(self.prompts, file, indent=4)
 
     def run(self):
