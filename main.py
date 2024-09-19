@@ -132,7 +132,7 @@ def main():
 
     if model_type == 'llm':
         if config.get('rebuild_prompts', False):
-            prompt_generator = PromptGenerator(config['config_llm_path'])
+            prompt_generator = PromptGenerator(config)
             prompt_generator.run()
         process_llm_prompts(config)
     else:
