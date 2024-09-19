@@ -1,0 +1,33 @@
+# LLM Model Configuration
+
+# Model
+model_name: "meta-llama/Llama-2-7b-chat-hf"
+
+# Is openai model
+is_openai: false
+openai_organization: "YOUR_ORGANIZATION_ID"
+
+# Quantization
+load_in_4bit: true
+bnb_4bit_quant_type: "nf4"
+bnb_4bit_use_double_quant: true
+
+# Settings
+use_system_message: false
+use_label_explanation: false
+few_shot_prompt: false
+n_shots: 0
+max_input_token_length: 2048
+max_new_tokens: 500
+temperature: 0.0
+
+# Rebuild prompts
+rebuild_prompts: true
+
+# Paths
+prompts_path: "data/prompts.json"
+responses_dir: "output/llm_responses" # The responses will be saved in a folder named after the model_name
+template_path: "prompt/bin-template.yaml"
+
+# Other settings
+save_every: 32

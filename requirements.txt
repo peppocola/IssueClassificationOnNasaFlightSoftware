@@ -17,3 +17,5 @@ sentencepiece
 protobuf
 setfit
 python-dotenv
+argparse
+imblearn

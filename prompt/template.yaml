@@ -1,0 +1,30 @@
+task: |
+  You are provided with a GitHub issue in this format:
+  Title: """the title of the issue"""
+  Body: """the body of the issue"""
+  
+  You have to assign it a label.
+  Possible labels are: "bug", "feature", "question", "documentation"
+
+label_explanations: |
+  The "bug" label is used to identify an issue report that describes a problem or error within the software or codebase. It indicates that something is not functioning as intended or producing unexpected results. Bug reports help developers identify and fix issues to improve the overall quality and reliability of the software.
+  The "feature" label is applied to an issue report that suggests the addition or enhancement of a new capability or functionality within the software. It indicates a request for the implementation of a specific feature that does not currently exist. Feature requests help the development team understand the needs and requirements of the users and can influence the future development roadmap.
+  The "question" label is used when a user or contributor has a query or needs clarification regarding the software or codebase. It indicates that the issue report is seeking information, guidance, or assistance. Questions can be related to functionality, usage, best practices, or any other topic that requires clarification.
+  The "documentation" label is applied to an issue report that suggests improvements, updates, or corrections to the software's documentation. It indicates that the issue is focused on the written instructions, guides, or explanations provided alongside the codebase. Documentation issues help ensure that the information available to users and contributors is accurate, comprehensive, and up-to-date, thus facilitating better understanding and adoption of the software.
+
+format_instructions: |
+  The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":
+  
+  ```json
+  {
+      "reasoning": "string",  // The step by step reasoning to assign the correct label to the issue.
+      "label": "string"  // The label to assign to the issue. Possible labels are: "bug", "feature", "question", "documentation
+  }
+  ```
+
+example: |
+  Title: """{title}"""
+  Body: """{body}"""
+
+output: |
+  Output:

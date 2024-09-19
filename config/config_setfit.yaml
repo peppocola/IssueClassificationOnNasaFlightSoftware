@@ -10,7 +10,7 @@ num_epochs: 1
 num_iterations: 20
 
 # Validation
-use_validation: true
+use_validation: false
 validation_split: 0.2  # Only used if use_validation is true and no separate validation set is provided
 
 # Output

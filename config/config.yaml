@@ -1,0 +1,58 @@
+# Model Configuration
+model_type: "roberta" # Options: "setfit", "roberta", "llm"
+random_seed: 42
+
+# Data Paths
+train_path: "data/nasa_train_sample.csv"
+test_path: "data/nasa_test_sample.csv"
+add_train: "data/nlbse_23_train.csv"
+
+# Column Params
+text_columns: 
+  - "title"
+  - "body"
+label_column: "label"
+merged_text_column: "text"
+
+# Output Configuration
+output_path: "output"
+
+# Prediction Mode
+just_predict: false # This option is available only for SetFit (you need to have a fine-tuned base model) and LLMs (it will perform prompting without fine-tuning). LLM fine-tuning is not yet available
+
+# Label Configuration
+label_to_int:
+  bug: 0
+  non-bug: 1
+
+# Additional Data Handling
+merge_train: false
+add_labels: 
+  - "bug"
+
+# Label Mapping
+map_labels: true
+label_mapping:
+  bug: bug
+  documentation: non-bug
+  feature: non-bug
+  question: non-bug
+
+# Data balancing
+balance_data: false #All classes will have the same number of samples as the minority class
+
+# Weights & Biases Configuration
+wandb:
+  project: "cFS-bug-nobug"
+  entity: "collab-uniba"
+  log_model: false
+  mode: "offline"
+
+# Output csv with ground truth and predictions
+save_predictions: false
+save_predictions_path: "output/predictions.csv"
+
+# Paths to other configuration files
+config_roberta_path: "config/config_roberta.yaml"
+config_setfit_path: "config/config_setfit.yaml"
+config_llm_path: "config/config_llm.yaml"
