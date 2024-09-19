@@ -43,31 +43,24 @@ def process_model(config, model_type, train_set, test_set):
     output_path = config['output_path']
     predict_mapping = config.get('label_to_int', {})
 
-    # Initialize wandb run
-    with wandb.init(project=config['wandb']['project'], 
-                    entity=config['wandb']['entity'], 
-                    config=config,
-                    mode=config['wandb']['mode'],
-                    dir='./logs'
-                    ):  
-        if config.get('just_predict', False):
-            if model_type == 'setfit':
-                model = SetFitModel.from_pretrained(config['base_model'])
-                references, predictions, prediction_time = predict_setfit(model, test_set, predict_mapping)
-            else:
-                raise ValueError("'just_predict' can only be used with the 'setfit' model type.")
+    if config.get('just_predict', False):
+        if model_type == 'setfit':
+            model = SetFitModel.from_pretrained(config['base_model'])
+            references, predictions, prediction_time = predict_setfit(model, test_set, predict_mapping)
         else:
-            if model_type == 'setfit':
-                model, training_time = train_setfit_model(config, train_set)
-                references, predictions, prediction_time = predict_setfit(model, test_set, predict_mapping)
-            elif model_type == 'roberta':
-                model, training_time = train_roberta_model(config, train_set, predict_mapping, val_data=test_set)
-                references, predictions, prediction_time = predict_roberta(model, test_set, predict_mapping)
-            else:
-                raise ValueError(f"Unsupported model type: {model_type}")
+            raise ValueError("'just_predict' can only be used with the 'setfit' model type.")
+    else:
+        if model_type == 'setfit':
+            model, training_time = train_setfit_model(config, train_set)
+            references, predictions, prediction_time = predict_setfit(model, test_set, predict_mapping)
+        elif model_type == 'roberta':
+            model, training_time = train_roberta_model(config, train_set, predict_mapping, val_data=test_set)
+            references, predictions, prediction_time = predict_roberta(model, test_set, predict_mapping)
+        else:
+            raise ValueError(f"Unsupported model type: {model_type}")
 
-            training_time_sec = training_time.total_seconds()
-            wandb.log({"training_time": training_time_sec})
+        training_time_sec = training_time.total_seconds()
+        wandb.log({"training_time": training_time_sec})
 
         results = generate_classification_report(references, predictions)
         results['prediction_time'] = prediction_time.total_seconds()
@@ -101,12 +94,6 @@ def process_llm_model(config):
     """Process and evaluate the LLM model."""
     evaluator = LLMEvaluator(config['config_path'], single_model=config['base_model'])
     metrics = evaluator.evaluate_model()
-    
-    with wandb.init(project=config['wandb']['project'], 
-                    entity=config['wandb']['entity'], 
-                    config=config,
-                    mode=config['wandb']['mode'],
-                    dir='./logs'):
         
         model_metrics = metrics.get(config['base_model'], {})
         
@@ -126,25 +113,31 @@ def main():
         return
 
     model_type = config.get('model_type', 'setfit')
+    
+    with wandb.init(project=config['wandb']['project'], 
+                    entity=config['wandb']['entity'], 
+                    config=config,
+                    mode=config['wandb']['mode'],
+                    dir='./logs'):
 
-    if model_type == 'llm':
-        if config.get('rebuild_prompts', False):
-            prompt_generator = PromptGenerator(config)
-            prompt_generator.run()
-        process_llm_prompts(config)
-    else:
-        # Prepare datasets
-        train_set, test_set = preprocess_dataset(config)
+        if model_type == 'llm':
+            if config.get('rebuild_prompts', False):
+                prompt_generator = PromptGenerator(config)
+                prompt_generator.run()
+            process_llm_prompts(config)
+        else:
+            # Prepare datasets
+            train_set, test_set = preprocess_dataset(config)
 
-        print("Training set label distribution:")
-        print_label_distribution(train_set)
+            print("Training set label distribution:")
+            print_label_distribution(train_set)
 
-        if test_set:
-            print("Test set label distribution:")
-            print_label_distribution(test_set)
+            if test_set:
+                print("Test set label distribution:")
+                print_label_distribution(test_set)
 
-        # Process the model
-        process_model(config, model_type, train_set, test_set)
+            # Process the model
+            process_model(config, model_type, train_set, test_set)
 
 if __name__ == "__main__":
     main()
