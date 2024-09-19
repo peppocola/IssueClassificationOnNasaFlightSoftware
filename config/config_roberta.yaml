@@ -30,6 +30,3 @@ weight_decay: 0.01
 # Output
 output_dir: "./roberta_output"
 logging_dir: "./logs"
-
-# Device
-device: "cuda"
