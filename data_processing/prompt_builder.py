@@ -176,7 +176,7 @@ class PromptGenerator:
             crafted_prompt = self.craft_prompt(replacements)
             test_pair = {
                 **crafted_prompt,
-                'target': row[self.config['target_column']]
+                'target': row[self.config['label_column']]
             }
             self.prompts[index] = test_pair
 
