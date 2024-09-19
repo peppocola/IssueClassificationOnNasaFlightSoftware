@@ -28,6 +28,8 @@ class BaseLLMInference(ABC):
             self.prompts = json.load(file)
         if self.responses:
             self.prompts = {k: v for k, v in self.prompts.items() if k not in self.responses}
+        if len(prompts) < 1:
+            raise Exception("No prompts to process. All prompts have already been processed.")
         self.logger.info(f"Loaded {len(self.prompts)} prompts")
 
     def load_responses(self):
