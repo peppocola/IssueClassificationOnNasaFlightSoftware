@@ -95,17 +95,15 @@ def process_llm_model(config):
     evaluator = LLMEvaluator(config['config_path'], single_model=config['base_model'])
     metrics = evaluator.evaluate_model()
         
-        model_metrics = metrics.get(config['base_model'], {})
-        
-        # Log flattened metrics to wandb
-        wandb.log(flatten_metrics(model_metrics))
-        
-        # Save the Excel report
-        output_dir = os.path.join(config['responses_dir'], config['base_model'])
-        evaluator.create_excel_table({config['base_model']: model_metrics}, output_dir)
-        
-        if config['wandb']['log_model']:
-            wandb.save(os.path.join(output_dir, "report.xlsx"))
+    model_metrics = metrics.get(config['base_model'], {})
+    
+    # Log flattened metrics to wandb
+    wandb.log(flatten_metrics(model_metrics))
+    
+    # Save the Excel report
+    output_dir = os.path.join(config['responses_dir'], config['base_model'])
+    evaluator.create_excel_table({config['base_model']: model_metrics}, output_dir)
+    
 
 def main():
     config = load_and_merge_configs()
