@@ -8,34 +8,24 @@ from model.model_prompting import process_llm_prompts
 from evaluation.result_saving import save_results, generate_classification_report, save_csv_results
 from setfit import SetFitModel
 from evaluation.llm_response_eval import LLMEvaluator
+from data_processing.prompt_builder import PromptGenerator
 
-def get_hyperparameters(config, model_type):
-    """Extract relevant hyperparameters based on model type."""
-    common_params = {
-        "model_type": model_type,
-        "random_seed": config.get('random_seed'),
-        "base_model": config.get('base_model'),
-    }
-    
-    if model_type == 'setfit':
-        return {
-            **common_params,
-            "batch_size": config.get('batch_size'),
-            "num_iterations": config.get('num_iterations'),
-            "num_epochs": config.get('num_epochs'),
-        }
-    elif model_type == 'roberta':
-        return {
-            **common_params,
-            "learning_rate": config.get('learning_rate'),
-            "num_train_epochs": config.get('num_train_epochs'),
-            "per_device_train_batch_size": config.get('per_device_train_batch_size'),
-            "weight_decay": config.get('weight_decay'),
-            "use_custom_loss": config.get('use_custom_loss'),
-            "class_weights": config.get('class_weights'),
-        }
-    else:
-        return common_params
+def load_and_merge_configs():
+    """Load and merge main configuration with model-specific configuration."""
+    main_config = load_config("config/config.yaml")
+    if not main_config:
+        return None
+
+    model_type = main_config.get('model_type', 'setfit')
+
+    # Load model-specific config
+    model_config_path = main_config.get(f'config_{model_type}_path', f'config/config_{model_type}.yaml')
+    model_config = load_config(model_config_path)
+    if not model_config:
+        return None
+
+    # Merge main config with model-specific config, prioritizing model-specific settings
+    return {**main_config, **model_config}
 
 def flatten_metrics(metrics):
     """Flatten a nested dictionary of metrics."""
@@ -134,23 +124,16 @@ def process_llm_model(config):
             wandb.save(os.path.join(output_dir, "report.xlsx"))
 
 def main():
-    # Load main configuration
-    main_config = load_config("config/config.yaml")
-    if not main_config:
+    config = load_and_merge_configs()
+    if not config:
         return
 
-    model_type = main_config.get('model_type', 'setfit')
-
-    # Load model-specific config
-    model_config_path = main_config.get(f'config_{model_type}_path', f'config/config_{model_type}.yaml')
-    model_config = load_config(model_config_path)
-    if not model_config:
-        return
-
-    # Merge main config with model-specific config, prioritizing model-specific settings
-    config = {**main_config, **model_config}
+    model_type = config.get('model_type', 'setfit')
 
     if model_type == 'llm':
+        if config.get('rebuild_prompts', False):
+            prompt_generator = PromptGenerator(config['config_llm_path'])
+            prompt_generator.run()
         process_llm_prompts(config)
     else:
         # Prepare datasets

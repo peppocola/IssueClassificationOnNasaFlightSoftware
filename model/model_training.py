@@ -85,7 +85,7 @@ def train_setfit_model(config, train_set, val_data=None):
     return model, training_time
 
 def train_roberta_model(config, train_set, label_to_int, val_data=None):
-    DEVICE = torch.device(config['device'])
+    DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     if config['use_validation'] and val_data is None:
         train_set, val_data = split_dataset(train_set, config['validation_split'])

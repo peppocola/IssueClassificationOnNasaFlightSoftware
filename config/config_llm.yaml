@@ -21,6 +21,9 @@ max_input_token_length: 2048
 max_new_tokens: 500
 temperature: 0.0
 
+# Rebuild prompts
+rebuild_prompts: true
+
 # Paths
 prompts_path: "data/prompts.json"
 responses_dir: "output/llm_responses" # The responses will be saved in a folder named after the model_name
