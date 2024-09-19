@@ -64,6 +64,10 @@ The `config.yaml` file allows you to configure various aspects of the model trai
   - **mode**: Logging mode, either `"online"` or `"offline"`.
 - **save_predictions**: If `True`, save the predictions to a CSV file.
 - **save_predictions_path**: Path to save the predictions CSV file.
+- **balance_data**: If `True`, balances the dataset by undersampling the majority class.
+- **use_validation**: If `True`, uses a validation set during training.
+- **validation_split**: The proportion of the training data to use as validation data when `use_validation` is `True`.
+- **wandb.log_model**: If `True`, logs the model to Weights & Biases.
 
 ### Example Configuration
 
