@@ -43,16 +43,13 @@ def process_model(config, model_type, train_set, test_set):
     output_path = config['output_path']
     predict_mapping = config.get('label_to_int', {})
 
-    # Extract hyperparameters
-    hyperparameters = get_hyperparameters(config, model_type)
-
     # Initialize wandb run
     with wandb.init(project=config['wandb']['project'], 
                     entity=config['wandb']['entity'], 
-                    config=hyperparameters,
+                    config=config,
                     mode=config['wandb']['mode'],
                     dir='./logs'
-                    ):  # Log hyperparameters
+                    ):  
         if config.get('just_predict', False):
             if model_type == 'setfit':
                 model = SetFitModel.from_pretrained(config['base_model'])

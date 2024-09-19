@@ -54,9 +54,6 @@ class BaseLLMInference(ABC):
         pass
 
     def run(self):
-        if wandb.run is None:
-            wandb.init(project=self.config['wandb']['project'], entity=self.config['wandb']['entity'], config=self.config)
-        
         self.setup()
         self.load_responses()
         self.load_prompts()
