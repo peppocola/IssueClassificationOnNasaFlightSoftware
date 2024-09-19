@@ -81,6 +81,7 @@ class LLMInference(BaseLLMInference):
         self.logger.info(f"Loading model and tokenizer")
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.config["model_name"])
+        self.accelerator = Accelerator()
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config["model_name"],    
             device_map={"": self.accelerator.process_index},
