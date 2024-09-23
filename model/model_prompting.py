@@ -111,7 +111,7 @@ class LLMInference(BaseLLMInference):
             with self.accelerator.split_between_processes(batch_prompts) as prompts:
                 for prompt_id, prompt in prompts.items():
                     conversation = []
-                    if self.config.get('system_message'):
+                    if self.config.get('use_system_message'):
                         conversation.append({"role": "system", "content": prompt['system']})
                     conversation.append({"role": "user", "content": prompt['prompt']})
                     input_ids = self.tokenizer.apply_chat_template(conversation, return_tensors="pt").to("cuda")
