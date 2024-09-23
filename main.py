@@ -92,10 +92,10 @@ def process_model(config, model_type, train_set, test_set):
 
 def eval_llm_model(config):
     """Process and evaluate the LLM model."""
-    evaluator = LLMEvaluator(config['config_path'], single_model=config['base_model'])
+    evaluator = LLMEvaluator(config['config_path'], single_model=config['model_name'])
     metrics = evaluator.evaluate_model()
         
-    model_metrics = metrics.get(config['base_model'], {})
+    model_metrics = metrics.get(config['model_name'], {})
     
     # Log flattened metrics to wandb
     wandb.log(flatten_metrics(model_metrics))
@@ -123,7 +123,7 @@ def main():
                 prompt_generator = PromptGenerator(config)
                 prompt_generator.run()
             process_llm_prompts(config)
-            eval_llm_model(config, config['model_name'])
+            eval_llm_model(config)
         else:
             # Prepare datasets
             train_set, test_set = preprocess_dataset(config)
