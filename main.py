@@ -90,7 +90,7 @@ def process_model(config, model_type, train_set, test_set):
         if config['save_predictions']:
             save_csv_results(test_set, references, predictions, config['save_predictions_path'])
 
-def process_llm_model(config):
+def eval_llm_model(config):
     """Process and evaluate the LLM model."""
     evaluator = LLMEvaluator(config['config_path'], single_model=config['base_model'])
     metrics = evaluator.evaluate_model()
@@ -123,6 +123,7 @@ def main():
                 prompt_generator = PromptGenerator(config)
                 prompt_generator.run()
             process_llm_prompts(config)
+            eval_llm_model(config, config['base_model'])
         else:
             # Prepare datasets
             train_set, test_set = preprocess_dataset(config)
