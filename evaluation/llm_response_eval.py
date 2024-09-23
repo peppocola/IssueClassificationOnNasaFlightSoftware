@@ -17,6 +17,15 @@ class LLMEvaluator:
         self.prompts_path = self.config["prompts_path"]
         self.responses_dir = self.config["responses_dir"]
         self.single_model = single_model
+        self.possible_labels = self.get_possible_labels()
+
+    def get_possible_labels(self):
+        with open(self.prompts_path, 'r') as file:
+            prompts = json.load(file)
+        labels = set()
+        for prompt_id, prompt_data in prompts.items():
+            labels.add(prompt_data["target"])
+        return list(labels)
 
     def get_response_paths(self):
         if self.single_model:
@@ -41,7 +50,8 @@ class LLMEvaluator:
             return label
         except:
             try:
-                label = re.search(r"(:?\\\"|\")label(:?\\\"|\"):\s*(:?\\\"|\")(bug|feature|documentation|question)(:?\\\"|\")", text, flags=re.DOTALL)[4]
+                # labels should be the ones in the self.possible_labels list
+                label = re.search(r"(:?\\\"|\")label(:?\\\"|\"):\s*(:?\\\"|\")(" + "|".join(self.possible_labels) + ")(:?\\\"|\")", text, flags=re.DOTALL)[4]
                 return label
             except Exception:
                 return ""
@@ -83,28 +93,3 @@ class LLMEvaluator:
             report = classification_report(y_true, y_pred, labels=labels, output_dict=True)
             metrics[model_name] = report
         return metrics
-
-    def create_excel_table(self, metrics, output_path):
-        wb = Workbook()
-        wb.remove(wb.active)
-        for model_name, metric in metrics.items():
-            convert_report2excel(
-                workbook=wb,
-                report=metric,
-                sheet_name=model_name,
-            )
-        wb.save(os.path.join(output_path, "report.xlsx"))
-
-    def run_evaluation(self):
-        metrics = self.evaluate_model()
-        output_dir = os.path.join(self.responses_dir, self.single_model) if self.single_model else self.responses_dir
-        self.create_excel_table(metrics, output_dir)
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Evaluate LLM responses")
-    parser.add_argument("--config", default="config/config.yaml", help="Path to the configuration file")
-    parser.add_argument("--model", help="Evaluate a single model (optional)")
-    args = parser.parse_args()
-
-    evaluator = LLMEvaluator(args.config, single_model=args.model)
-    evaluator.run_evaluation()

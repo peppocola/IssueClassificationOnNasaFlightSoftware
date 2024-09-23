@@ -100,10 +100,6 @@ def eval_llm_model(config):
     # Log flattened metrics to wandb
     wandb.log(flatten_metrics(model_metrics))
     
-    # Save the Excel report
-    output_dir = os.path.join(config['responses_dir'], config['model_name'])
-    evaluator.create_excel_table({config['model_name']: model_metrics}, output_dir)
-    
 
 def main():
     config = load_and_merge_configs()
