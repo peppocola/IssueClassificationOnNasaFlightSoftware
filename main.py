@@ -89,7 +89,7 @@ def eval_llm_model(config):
     evaluator = LLMEvaluator(config, single_model=config['model_name'])
     metrics = evaluator.evaluate_model()
         
-    model_metrics = metrics.get(config['model_name'], {})
+    model_metrics = metrics.get(config['model_name'].split('/')[1], {})
     
     # Log flattened metrics to wandb
     wandb.log(flatten_metrics(model_metrics))
