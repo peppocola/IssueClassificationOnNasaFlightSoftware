@@ -92,7 +92,7 @@ def process_model(config, model_type, train_set, test_set):
 
 def eval_llm_model(config):
     """Process and evaluate the LLM model."""
-    evaluator = LLMEvaluator(config['config_path'], single_model=config['model_name'])
+    evaluator = LLMEvaluator(config, single_model=config['model_name'])
     metrics = evaluator.evaluate_model()
         
     model_metrics = metrics.get(config['model_name'], {})
@@ -101,8 +101,8 @@ def eval_llm_model(config):
     wandb.log(flatten_metrics(model_metrics))
     
     # Save the Excel report
-    output_dir = os.path.join(config['responses_dir'], config['base_model'])
-    evaluator.create_excel_table({config['base_model']: model_metrics}, output_dir)
+    output_dir = os.path.join(config['responses_dir'], config['model_name'])
+    evaluator.create_excel_table({config['model_name']: model_metrics}, output_dir)
     
 
 def main():
