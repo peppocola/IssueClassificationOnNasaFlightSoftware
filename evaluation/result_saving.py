@@ -16,6 +16,9 @@ def generate_classification_report(references, predictions):
 def save_csv_results(test_set, references, predictions, output_path):
     """Saves the input text with ground truth and predicted labels."""
     output_file_name = 'results.csv'
+    # Create the folder if it does not exist
+    if not os.path.exists(output_path):
+        os.makedirs(output_path, exist_ok=True)
     with open(os.path.join(output_path, output_file_name), 'w') as fp:
         fp.write("text,ground_truth,predicted\n")
         for i, (text, ref, pred) in enumerate(zip(test_set['text'], references, predictions)):
