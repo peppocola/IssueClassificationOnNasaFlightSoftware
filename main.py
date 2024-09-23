@@ -29,14 +29,14 @@ def load_and_merge_configs():
 
 def flatten_metrics(metrics):
     """Flatten a nested dictionary of metrics."""
-    flattened = {}
+    result_log = {}
     for key, value in metrics.items():
         if isinstance(value, dict):
-            for subkey, subvalue in value.items():
-                flattened[f"{key}_{subkey}"] = subvalue
+            for k, v in value.items():
+                result_log[f"{key}_{k}"] = v
         else:
-            flattened[key] = value
-    return flattened
+            result_log[key] = value
+    return result_log
 
 def process_model(config, model_type, train_set, test_set):
     """Process a single model for training or prediction."""
@@ -69,13 +69,7 @@ def process_model(config, model_type, train_set, test_set):
 
         # Log results to wandb so they can be tracked
         # Unnest the results dictionary for logging
-        result_log = {}
-        for key, value in results.items():
-            if isinstance(value, dict):
-                for k, v in value.items():
-                    result_log[f"{key}_{k}"] = v
-            else:
-                result_log[key] = value
+        result_log = flatten_metrics(results)
         wandb.log(result_log)
 
         save_results(results, output_path, config['base_model'])
