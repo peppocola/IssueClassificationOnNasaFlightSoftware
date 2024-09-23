@@ -123,7 +123,7 @@ def main():
                 prompt_generator = PromptGenerator(config)
                 prompt_generator.run()
             process_llm_prompts(config)
-            eval_llm_model(config, config['base_model'])
+            eval_llm_model(config, config['model_name'])
         else:
             # Prepare datasets
             train_set, test_set = preprocess_dataset(config)
