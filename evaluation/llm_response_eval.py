@@ -12,15 +12,11 @@ sys.path.append('externals/sklearn-cls-report2excel')
 from convert_report2excel import convert_report2excel
 
 class LLMEvaluator:
-    def __init__(self, config_path, single_model=None):
-        self.config = self.load_config(config_path)
+    def __init__(self, config, single_model=None):
+        self.config = config
         self.prompts_path = self.config["prompts_path"]
         self.responses_dir = self.config["responses_dir"]
         self.single_model = single_model
-
-    def load_config(self, config_path):
-        with open(config_path, 'r') as file:
-            return yaml.safe_load(file)
 
     def get_response_paths(self):
         if self.single_model:
