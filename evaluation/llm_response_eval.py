@@ -102,5 +102,5 @@ class LLMEvaluator:
                 y_true.append(true_label)
                 y_pred.append(predictions.get(prompt_id, ""))
             report = classification_report(y_true, y_pred, labels=labels, output_dict=True)
-            metrics['-'.join(model_name + filename)] = report
+            metrics[model_name + '-' + filename] = report
         return metrics
