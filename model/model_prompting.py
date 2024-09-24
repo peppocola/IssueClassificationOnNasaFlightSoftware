@@ -35,7 +35,7 @@ class BaseLLMInference(ABC):
     def load_responses(self):
         responses_dir = os.path.join(self.config["responses_dir"], self.config["model_name"])
         os.makedirs(responses_dir, exist_ok=True)
-        self.responses_path = os.path.join(responses_dir, "responses.json")
+        self.responses_path = os.path.join(responses_dir, self.config["response_file"])
 
         if os.path.exists(self.responses_path):
             with open(self.responses_path, 'r') as file:

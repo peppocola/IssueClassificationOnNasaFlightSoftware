@@ -29,7 +29,7 @@ class LLMEvaluator:
 
     def get_response_paths(self):
         if self.single_model:
-            return [os.path.join(self.responses_dir, self.single_model, "responses.json")]
+            return [os.path.join(self.responses_dir, self.single_model, self.config["response_file"])]
         
         response_paths = []
         for folder in os.listdir(self.responses_dir):

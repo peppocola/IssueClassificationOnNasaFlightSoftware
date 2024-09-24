@@ -28,6 +28,7 @@ rebuild_prompts: true
 prompts_path: "data/prompts.json"
 responses_dir: "output/llm_responses" # The responses will be saved in a folder named after the model_name
 template_path: "prompt/bin-template.yaml"
+response_file: "responses.json"
 
 # Other settings
 save_every: 32
