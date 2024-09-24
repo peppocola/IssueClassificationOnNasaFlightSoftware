@@ -194,7 +194,7 @@ class OpenAILLMInference(BaseLLMInference):
             self.logger.info(f"Processing prompt {prompt_id}")
             try:
                 messages = []
-                if self.config.get('system_message'):
+                if self.config.get('use_system_message', False) == True:
                     messages.append({"role": "system", "content": self.config['system_message']})
                 messages.append({"role": "user", "content": prompt['prompt']})
 
@@ -233,7 +233,7 @@ class OpenAILLMInference(BaseLLMInference):
         })
 
 def process_llm_prompts(config):
-    if config.get("use_openai", False):
+    if config.get("is_openai", False):
         llm_inference = OpenAILLMInference(config)
     else:
         llm_inference = LLMInference(config)
