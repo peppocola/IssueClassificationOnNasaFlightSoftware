@@ -88,12 +88,13 @@ def eval_llm_model(config):
     """Process and evaluate the LLM model."""
     evaluator = LLMEvaluator(config, single_model=config['model_name'])
     metrics = evaluator.evaluate_model()
-        
-    model_metrics = metrics.get(config['model_name'].split('/')[1], {})
     
-    # Log flattened metrics to wandb
-    wandb.log(flatten_metrics(model_metrics))
-    
+    # If there is only one key in the metrics dictionary, flatten it
+    if len(metrics) == 1:
+        model_metrics = metrics[list(metrics.keys())[0]]
+        # Log flattened metrics to wandb
+        wandb.log(flatten_metrics(model_metrics))
+
 
 def main():
     config = load_and_merge_configs()
