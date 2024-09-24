@@ -29,7 +29,9 @@ class LLMEvaluator:
 
     def get_response_paths(self):
         if self.single_model:
-            return [os.path.join(self.responses_dir, self.single_model, self.config["response_file"])]
+            # Get the filename without the .json extension
+            filename = os.path.splitext(self.config["response_file"])[0]
+            return [(os.path.join(self.responses_dir, self.single_model, self.config["response_file"]), filename)]
         
         response_paths = []
         for folder in os.listdir(self.responses_dir):
@@ -37,8 +39,17 @@ class LLMEvaluator:
             if not os.path.isdir(folder_path):
                 continue
             for subfolder in os.listdir(folder_path):
-                response_path = os.path.join(folder_path, subfolder, "responses.json")
-                response_paths.append(response_path)
+                subfolder_path = os.path.join(folder_path, subfolder)
+                if not os.path.isdir(subfolder_path):
+                    continue
+                # Check for .json files in the subfolder
+                for file in os.listdir(subfolder_path):
+                    if file.endswith(".json"):
+                        file_path = os.path.join(subfolder_path, file)
+                        # Get the filename without the .json extension
+                        filename = os.path.splitext(file)[0]
+                        response_paths.append((file_path, filename))
+        
         return response_paths
 
     def get_model_name(self, response_path):
@@ -79,7 +90,7 @@ class LLMEvaluator:
         labels = list(set(true_labels.values()))
 
         metrics = {}
-        for response_path in response_paths:
+        for response_path, filename in response_paths:
             model_name = self.get_model_name(response_path)
             if not os.path.exists(response_path):
                 print(f"Warning: Response file not found for model {model_name}")
@@ -91,5 +102,5 @@ class LLMEvaluator:
                 y_true.append(true_label)
                 y_pred.append(predictions.get(prompt_id, ""))
             report = classification_report(y_true, y_pred, labels=labels, output_dict=True)
-            metrics[model_name] = report
+            metrics['-'.join(model_name + filename)] = report
         return metrics
