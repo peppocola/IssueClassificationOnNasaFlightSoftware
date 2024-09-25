@@ -195,7 +195,7 @@ class OpenAILLMInference(BaseLLMInference):
             try:
                 messages = []
                 if self.config.get('use_system_message', False) == True:
-                    messages.append({"role": "system", "content": self.config['system_message']})
+                    messages.append({"role": "system", "content": prompt['system']})
                 messages.append({"role": "user", "content": prompt['prompt']})
 
                 response = self.client.chat.completions.create(
