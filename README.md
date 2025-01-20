@@ -1,5 +1,13 @@
 # Project Documentation
 
+This is the replication package for the paper: "Issue Classification with LLMs: an Empirical Study of the NASA Flight Software Systems", submitted to Journal of Systems and Software (JSS) - In Practice 
+Authors:
+- Giuseppe Colavito (University of Bari)
+- Filippo Lanubile (University of Bari)
+- Nicole Novielli (University of Bari)
+- Christopher Arreza (NASA Goddard Space Flight Center)
+- Ying Shi (NASA Goddard Space Flight Center)
+
 ## Overview
 
 This project provides a framework for training and evaluating text classification models. It supports SetFit, RoBERTa, and LLM models (including OpenAI models) and includes functionality for data preprocessing, model training, prediction, and result evaluation.
