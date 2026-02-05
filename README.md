@@ -199,7 +199,7 @@ docker image rm nasa-issue-classifier:latest
 If you prefer not to use Docker, you can set up the environment manually.
 
 #### Prerequisites
-Python 3.11.6 is required to run this project for full reproducibility. You can check your Python version by running:
+Python 3.11.x is recommended to run this project. For best reproducibility, use Python 3.11.6 (as specified in the Docker environment). You can check your Python version by running:
 
 ```bash
 python --version
@@ -358,3 +358,15 @@ python -c "import transformers; print(transformers.__version__)"
 ```
 
 Expected output: `4.39.0`
+
+### Security Considerations
+
+**Important**: Some dependencies (transformers 4.39.0, torch 2.2.2) have known security vulnerabilities reported in newer advisories. These versions are pinned to maintain compatibility with the existing codebase, as specified in the original issue.
+
+**Mitigations**:
+- Do not load untrusted model files or pickled data
+- Only use models from trusted sources (e.g., official Hugging Face repositories)
+- Run the application in an isolated environment (Docker container)
+- Avoid processing untrusted user inputs directly
+
+**For production use**: Consider upgrading to newer versions (transformers >= 4.48.0, torch >= 2.6.0) and testing thoroughly for compatibility. The pinned versions are primarily for research reproducibility.
