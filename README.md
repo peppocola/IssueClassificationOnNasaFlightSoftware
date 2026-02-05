@@ -117,8 +117,10 @@ This project provides a fully reproducible environment using Docker. This is the
 
 #### Prerequisites for Docker
 - Docker (version 20.10 or higher)
-- Docker Compose (version 1.29 or higher)
+- Docker Compose (version 1.29 or higher, or Docker Compose V2 integrated with Docker)
 - NVIDIA Docker runtime (optional, for GPU support)
+
+**Note**: Commands in this guide use `docker-compose` (V1). If you have Docker Compose V2, use `docker compose` (without hyphen) instead.
 
 #### Setup with Docker
 
