@@ -25,11 +25,18 @@ services:
       - PYTHONUNBUFFERED=1
     env_file:
       - .env
+    # Memory configuration for training large models
+    # Adjust these values based on your system resources
+    # RoBERTa training typically requires 4-8GB RAM
+    deploy:
+      resources:
+        limits:
+          memory: 8G  # Maximum memory allocation
+        reservations:
+          memory: 4G  # Minimum memory reservation
     # Optionally specify GPU support (requires nvidia-docker)
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+    # Uncomment the lines below to enable GPU
+    #   devices:
+    #     - driver: nvidia
+    #       count: 1
+    #       capabilities: [gpu]

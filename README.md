@@ -119,8 +119,11 @@ This project provides a fully reproducible environment using Docker. This is the
 - Docker (version 20.10 or higher)
 - Docker Compose (version 1.29 or higher, or Docker Compose V2 integrated with Docker)
 - NVIDIA Docker runtime (optional, for GPU support)
+- **System RAM**: Minimum 8GB RAM (12GB+ recommended for RoBERTa training)
 
 **Note**: Commands in this guide use `docker-compose` (V1). If you have Docker Compose V2, use `docker compose` (without hyphen) instead.
+
+**Memory Configuration**: The docker-compose.yml is configured to use up to 8GB of RAM. If training fails with exit code 137 (out of memory), see the Troubleshooting section below.
 
 #### Setup with Docker
 
@@ -323,7 +326,59 @@ The LLM responses will be saved in the directory specified by `responses_dir`.
 
 ## Troubleshooting
 
-If you encounter issues:
+### Common Issues
+
+#### Container Exits with Code 137 (Out of Memory)
+
+**Problem**: The container terminates unexpectedly during training with exit code 137.
+
+**Cause**: This indicates the container ran out of memory (OOM). Training large transformer models like RoBERTa requires significant RAM.
+
+**Solutions**:
+
+1. **Increase Docker memory allocation**:
+   - The docker-compose.yml is configured with 8GB memory limit by default
+   - If you have less RAM available, reduce the batch size in `config/config_roberta.yaml`:
+     ```yaml
+     per_device_train_batch_size: 8  # Reduce from 16 to 8
+     ```
+   - Or use a smaller model like SetFit by changing `model_type` in `config/config.yaml`:
+     ```yaml
+     model_type: "setfit"  # Uses less memory than RoBERTa
+     ```
+
+2. **Adjust Docker Desktop memory settings** (if using Docker Desktop):
+   - Open Docker Desktop → Settings → Resources
+   - Increase "Memory" to at least 8GB (12GB recommended for RoBERTa)
+   - Click "Apply & Restart"
+
+3. **Modify memory limits in docker-compose.yml**:
+   ```yaml
+   deploy:
+     resources:
+       limits:
+         memory: 12G  # Increase if you have more RAM available
+   ```
+
+**Memory Requirements by Model Type**:
+- SetFit: 2-4GB RAM
+- RoBERTa-base: 6-8GB RAM (12GB recommended)
+- LLM models: 8-16GB RAM (varies by model size)
+
+#### Progress Bars Not Visible
+
+If progress bars are not showing, ensure `tty: true` is set in docker-compose.yml (already configured).
+
+#### Submodules Not Initialized
+
+Submodules are automatically cloned during Docker build. If missing, rebuild the image:
+```bash
+docker-compose build --no-cache
+```
+
+### Other Issues
+
+If you encounter other issues:
 - Verify that the `config/config.yaml` file and other configuration files are correctly formatted and contain valid paths.
 - Ensure all dependencies are installed properly.
 - Confirm that the datasets are correctly formatted and accessible in the data folder.
