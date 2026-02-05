@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
     image: nasa-issue-classifier:latest
     container_name: nasa-classifier
+    tty: true  # Allocate a pseudo-TTY for progress bars and interactive output
+    stdin_open: true  # Keep STDIN open for interactive applications
     volumes:
       # Mount data directory (read-only for reproducibility)
       - ./data:/app/data:ro

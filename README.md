@@ -163,6 +163,8 @@ docker-compose up
 
 This will run the main.py script inside the container using the configuration in `config/config.yaml`.
 
+**Note**: Progress bars and logging output will be displayed in real-time thanks to the `tty: true` setting in docker-compose.yml, which enables interactive terminal output.
+
 **5. Access results**
 
 Results will be available in the `output/` directory on your host machine, and logs in the `logs/` directory.
