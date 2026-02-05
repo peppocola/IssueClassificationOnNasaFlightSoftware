@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  nasa-classifier:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nasa-issue-classifier:latest
+    container_name: nasa-classifier
+    volumes:
+      # Mount data directory (read-only for reproducibility)
+      - ./data:/app/data:ro
+      # Mount config directory to allow easy config changes
+      - ./config:/app/config:ro
+      # Mount output directory to persist results
+      - ./output:/app/output
+      # Mount logs directory to persist logs
+      - ./logs:/app/logs
+      # Mount prompt directory if using LLM
+      - ./prompt:/app/prompt:ro
+    environment:
+      # Environment variables can be set here or via .env file
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env
+    # Optionally specify GPU support (requires nvidia-docker)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]

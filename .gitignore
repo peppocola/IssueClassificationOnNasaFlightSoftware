@@ -208,3 +208,13 @@ pyrightconfig.json
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/python,linux,visualstudiocode
+
+### Docker ###
+# Docker volumes and build artifacts
+output/
+logs/
+wandb/
+
+# Don't ignore .keep files in directories
+!output/.keep
+!logs/.keep

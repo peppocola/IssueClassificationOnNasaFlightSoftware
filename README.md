@@ -111,8 +111,95 @@ config_llm_path: "config/config_llm.yaml"
 
 ## Usage
 
-### Prerequisites
-Python 3.11 or higher is required to run this project. You can check your Python version by running:
+### Reproducibility with Docker (Recommended)
+
+This project provides a fully reproducible environment using Docker. This is the **recommended approach** for ensuring consistent results across different machines.
+
+#### Prerequisites for Docker
+- Docker (version 20.10 or higher)
+- Docker Compose (version 1.29 or higher)
+- NVIDIA Docker runtime (optional, for GPU support)
+
+#### Setup with Docker
+
+**1. Clone the repository**
+
+```bash
+git clone https://github.com/peppocola/NasaExperiments.git
+cd NasaExperiments
+```
+
+Don't forget to initialize and update the submodules:
+
+```bash
+git submodule init
+git submodule update
+```
+
+**2. Create `.env` file**
+
+Create a `.env` file in the root directory with your API keys:
+
+```bash
+WANDB_API_KEY=your-wandb-api-key
+OPENAI_API_KEY=your-openai-api-key
+```
+
+**3. Build the Docker image**
+
+```bash
+docker-compose build
+```
+
+This builds a Docker image with Python 3.11.6 and all pinned dependencies.
+
+**4. Run training and testing**
+
+```bash
+docker-compose up
+```
+
+This will run the main.py script inside the container using the configuration in `config/config.yaml`.
+
+**5. Access results**
+
+Results will be available in the `output/` directory on your host machine, and logs in the `logs/` directory.
+
+#### Advanced Docker Usage
+
+**Run with custom configuration:**
+
+```bash
+docker-compose run nasa-classifier python main.py
+```
+
+**Run with GPU support:**
+
+Uncomment the `deploy` section in `docker-compose.yml` and ensure you have NVIDIA Docker runtime installed:
+
+```bash
+docker-compose up
+```
+
+**Interactive shell inside container:**
+
+```bash
+docker-compose run nasa-classifier bash
+```
+
+**Clean up Docker resources:**
+
+```bash
+docker-compose down
+docker image rm nasa-issue-classifier:latest
+```
+
+### Manual Installation (Alternative)
+
+If you prefer not to use Docker, you can set up the environment manually.
+
+#### Prerequisites
+Python 3.11.6 is required to run this project for full reproducibility. You can check your Python version by running:
 
 ```bash
 python --version
@@ -230,3 +317,44 @@ If you encounter issues:
 - Confirm that the datasets are correctly formatted and accessible in the data folder.
 - Check that the model-specific configuration files (`config_roberta.yaml`, `config_setfit.yaml`, `config_llm.yaml`) are present in the `config/` directory and properly formatted.
 - For OpenAI models, make sure your API key and organization ID are correctly set in the `.env` file and the configuration.
+
+## Reproducibility
+
+This project is designed to be fully reproducible across different machines and environments.
+
+### Environment Specifications
+
+- **Python Version**: 3.11.6 (pinned)
+- **All dependencies**: Version-pinned in `requirements.txt`
+- **Random seed**: Configurable in `config.yaml` (default: 42)
+
+### Ensuring Reproducibility
+
+1. **Use Docker (Recommended)**: The Docker setup guarantees a consistent environment with exact Python and library versions.
+
+2. **Manual setup**: If not using Docker, ensure you use Python 3.11.6 and install dependencies from the pinned `requirements.txt`:
+   ```bash
+   python3.11 -m pip install -r requirements.txt
+   ```
+
+3. **Fixed random seed**: The `random_seed` parameter in `config.yaml` ensures reproducible results across runs.
+
+4. **Version control**: All dependency versions are explicitly pinned to ensure compatibility.
+
+### Known Issues and Compatibility
+
+The dependencies have been tested and verified to work together with Python 3.11.6. Newer versions of some libraries may introduce breaking changes. The Docker environment ensures all versions are correct.
+
+### Verifying Your Setup
+
+To verify your environment is correctly set up, run a quick test:
+
+```bash
+# With Docker
+docker-compose run nasa-classifier python -c "import transformers; print(transformers.__version__)"
+
+# Without Docker
+python -c "import transformers; print(transformers.__version__)"
+```
+
+Expected output: `4.39.0`
