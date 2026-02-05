@@ -187,6 +187,14 @@ docker-compose up
 docker-compose run nasa-classifier bash
 ```
 
+**Validate Docker setup:**
+
+```bash
+./validate_docker.sh
+```
+
+This script checks that Docker is properly configured and all dependencies are correctly installed.
+
 **Clean up Docker resources:**
 
 ```bash
