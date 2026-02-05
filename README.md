@@ -383,12 +383,16 @@ Expected output: `4.39.0`
 
 #### Known Remaining Vulnerabilities
 
-⚠️ **protobuf 4.25.8** (Advisory references version <= 6.33.4)
-   - Issue: JSON recursion depth bypass advisory
-   - Status: Advisory appears to target the 6.x series; 4.25.8 is in the 4.x series
-   - Reason kept: 4.25.8 is the latest stable in the 4.x series compatible with transformers 4.39.0
-   - Note: Upgrading to 6.x would require updating multiple dependencies and may break compatibility
-   - Mitigation: Avoid processing untrusted JSON/protobuf data from external sources
+⚠️ **protobuf 4.25.8** - CANNOT BE UPGRADED (Patched version: 6.33.5)
+   - **Issue**: JSON recursion depth bypass (affects ALL versions <= 6.33.4)
+   - **Attempted fix**: Upgrade to 6.33.5 attempted but failed
+   - **Blocking dependency**: wandb 0.16.6 requires protobuf<5, creating dependency conflict
+   - **Error**: `wandb 0.16.6 depends on protobuf!=4.21.0, <5 and >=3.19.0`
+   - **Options to fix**:
+     1. Remove wandb entirely (breaks model tracking)
+     2. Upgrade wandb to version that supports protobuf 6.x (may break compatibility)
+     3. Accept the vulnerability with mitigations
+   - **Mitigation**: Avoid processing untrusted JSON/protobuf data; run in isolated Docker container
 
 ⚠️ **transformers 4.39.0** (Patched version: 4.48.0)
    - Issue: Deserialization of untrusted data vulnerability
