@@ -19,6 +19,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . .
 
+# Clone git submodules directly (since .git directory is not copied)
+# Remove empty submodule directory first if it exists
+RUN rm -rf externals/sklearn-cls-report2excel && \
+    git clone https://github.com/seanswyi/sklearn-cls-report2excel.git externals/sklearn-cls-report2excel
+
 # Create necessary directories
 RUN mkdir -p output logs
 

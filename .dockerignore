@@ -1,7 +1,6 @@
-# Git
+# Git (keep .gitmodules for submodule initialization)
 .git
 .gitignore
-.gitmodules
 
 # Python
 __pycache__

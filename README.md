@@ -153,7 +153,7 @@ OPENAI_API_KEY=your-openai-api-key
 docker-compose build
 ```
 
-This builds a Docker image with Python 3.11.6 and all pinned dependencies.
+This builds a Docker image with Python 3.11.6 and all pinned dependencies. **Note**: Git submodules are automatically cloned during the build process.
 
 **4. Run training and testing**
 
