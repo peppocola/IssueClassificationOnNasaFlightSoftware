@@ -15,9 +15,9 @@ huggingface-hub[cli]==0.23.5
 scikit-learn==1.4.2
 openpyxl==3.1.2
 openai==1.25.0
-wandb==0.16.6
-sentencepiece==0.2.0
-protobuf==4.25.3
+wandb==0.16.6  # Note: SSRF vulnerability advisory (withdrawn), but kept for compatibility
+sentencepiece==0.2.1  # Updated from 0.2.0 to fix heap overflow (CVE)
+protobuf==4.25.8  # Updated from 4.25.3 to fix DoS vulnerabilities
 setfit==1.0.3
 python-dotenv==1.0.1
 argparse==1.4.0

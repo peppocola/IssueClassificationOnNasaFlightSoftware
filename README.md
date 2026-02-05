@@ -371,12 +371,46 @@ Expected output: `4.39.0`
 
 ### Security Considerations
 
-**Important**: Some dependencies (transformers 4.39.0, torch 2.2.2) have known security vulnerabilities reported in newer advisories. These versions are pinned to maintain compatibility with the existing codebase, as specified in the original issue.
+**Important**: Some dependencies have known security vulnerabilities. Where possible, we've upgraded to patched versions while maintaining compatibility. However, some vulnerabilities remain due to compatibility requirements.
 
-**Mitigations**:
-- Do not load untrusted model files or pickled data
-- Only use models from trusted sources (e.g., official Hugging Face repositories)
-- Run the application in an isolated environment (Docker container)
-- Avoid processing untrusted user inputs directly
+#### Vulnerabilities Patched in This Release
 
-**For production use**: Consider upgrading to newer versions (transformers >= 4.48.0, torch >= 2.6.0) and testing thoroughly for compatibility. The pinned versions are primarily for research reproducibility.
+✅ **protobuf** - Upgraded from 4.25.3 to 4.25.8
+   - Fixed: DoS vulnerabilities and JSON recursion depth bypass
+
+✅ **sentencepiece** - Upgraded from 0.2.0 to 0.2.1
+   - Fixed: Heap overflow issue
+
+#### Known Remaining Vulnerabilities
+
+⚠️ **transformers 4.39.0** (Patched version: 4.48.0)
+   - Issue: Deserialization of untrusted data vulnerability
+   - Reason kept: Required for codebase compatibility
+   - Mitigation: Only load models from trusted sources (e.g., official Hugging Face repos)
+
+⚠️ **torch 2.2.2** (Patched version: 2.6.0)
+   - Issue: `torch.load` with `weights_only=True` can lead to RCE
+   - Reason kept: Required for compatibility with transformers 4.39.0 and numpy 1.26.4
+   - Mitigation: Code does not use `torch.load` directly; only use trusted model files
+
+⚠️ **wandb 0.16.6** (Advisory withdrawn)
+   - Issue: SSRF vulnerability (advisory has been withdrawn)
+   - Note: This advisory was withdrawn, indicating false positive or resolved
+
+#### Security Best Practices
+
+When using this repository:
+1. **Do not load untrusted model files or pickled data**
+2. **Only use models from trusted sources** (e.g., official Hugging Face repositories)
+3. **Run in isolated environment** (Docker container recommended)
+4. **Avoid processing untrusted user inputs** directly
+5. **Monitor for security updates** in the dependencies
+
+#### For Production Use
+
+Consider upgrading to newer versions and testing thoroughly:
+- transformers >= 4.48.0
+- torch >= 2.6.0
+- Verify compatibility with your specific use case
+
+**Note**: The pinned versions are primarily for research reproducibility and replicating published results. For production deployments, security should take priority over exact version matching.
