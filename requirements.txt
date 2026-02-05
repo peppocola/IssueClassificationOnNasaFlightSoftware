@@ -7,6 +7,7 @@ datasets==2.19.1
 peft==0.10.0
 accelerate==0.29.3
 torch==2.2.2
+numpy==1.26.4  # Pinned to <2.0 for torch 2.2.2 compatibility
 pandas==2.2.2
 tqdm==4.66.4
 loguru==0.7.2
