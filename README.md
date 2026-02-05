@@ -371,46 +371,69 @@ Expected output: `4.39.0`
 
 ### Security Considerations
 
-**Important**: Some dependencies have known security vulnerabilities. Where possible, we've upgraded to patched versions while maintaining compatibility. However, some vulnerabilities remain due to compatibility requirements.
+**Important**: Some dependencies have known security vulnerabilities. Where possible, we've upgraded to patched versions while maintaining compatibility. However, some vulnerabilities remain due to compatibility requirements specified in the original issue.
 
 #### Vulnerabilities Patched in This Release
 
 ✅ **protobuf** - Upgraded from 4.25.3 to 4.25.8
-   - Fixed: DoS vulnerabilities and JSON recursion depth bypass
+   - Fixed: Critical DoS vulnerabilities in the 4.x series (CVE-specific to versions < 4.25.8)
 
 ✅ **sentencepiece** - Upgraded from 0.2.0 to 0.2.1
-   - Fixed: Heap overflow issue
+   - Fixed: Heap overflow issue (CVE-specific to versions < 0.2.1)
 
 #### Known Remaining Vulnerabilities
 
+⚠️ **protobuf 4.25.8** (Advisory references version <= 6.33.4)
+   - Issue: JSON recursion depth bypass advisory
+   - Status: Advisory appears to target the 6.x series; 4.25.8 is in the 4.x series
+   - Reason kept: 4.25.8 is the latest stable in the 4.x series compatible with transformers 4.39.0
+   - Note: Upgrading to 6.x would require updating multiple dependencies and may break compatibility
+   - Mitigation: Avoid processing untrusted JSON/protobuf data from external sources
+
 ⚠️ **transformers 4.39.0** (Patched version: 4.48.0)
    - Issue: Deserialization of untrusted data vulnerability
-   - Reason kept: Required for codebase compatibility
+   - Reason kept: Required for codebase compatibility as specified in issue
    - Mitigation: Only load models from trusted sources (e.g., official Hugging Face repos)
 
 ⚠️ **torch 2.2.2** (Patched version: 2.6.0)
-   - Issue: `torch.load` with `weights_only=True` can lead to RCE
+   - Issue: `torch.load` with `weights_only=True` can lead to RCE; deserialization vulnerability
    - Reason kept: Required for compatibility with transformers 4.39.0 and numpy 1.26.4
    - Mitigation: Code does not use `torch.load` directly; only use trusted model files
+   - Note: One advisory for this has been withdrawn
 
 ⚠️ **wandb 0.16.6** (Advisory withdrawn)
    - Issue: SSRF vulnerability (advisory has been withdrawn)
-   - Note: This advisory was withdrawn, indicating false positive or resolved
+   - Status: Advisory withdrawn - likely false positive or issue resolved
+   - Note: Not a genuine security concern
 
 #### Security Best Practices
 
 When using this repository:
 1. **Do not load untrusted model files or pickled data**
 2. **Only use models from trusted sources** (e.g., official Hugging Face repositories)
-3. **Run in isolated environment** (Docker container recommended)
+3. **Run in isolated environment** (Docker container strongly recommended)
 4. **Avoid processing untrusted user inputs** directly
-5. **Monitor for security updates** in the dependencies
+5. **Do not expose this application directly to the internet**
+6. **Monitor for security updates** in the dependencies
 
 #### For Production Use
 
-Consider upgrading to newer versions and testing thoroughly:
-- transformers >= 4.48.0
-- torch >= 2.6.0
-- Verify compatibility with your specific use case
+**⚠️ Warning**: These pinned versions are for **research reproducibility only**. 
 
-**Note**: The pinned versions are primarily for research reproducibility and replicating published results. For production deployments, security should take priority over exact version matching.
+For production deployments:
+- Upgrade to patched versions: transformers >= 4.48.0, torch >= 2.6.0, protobuf >= 5.29.5 or >= 6.33.5
+- Test thoroughly for compatibility with your use case
+- Implement additional security controls (input validation, sandboxing, etc.)
+- Security must take priority over exact version matching
+
+#### Security Summary
+
+| Dependency | Current | Patched | Status | Risk Level |
+|------------|---------|---------|--------|------------|
+| protobuf | 4.25.8 | 6.33.5 | Advisory for 6.x series | Low-Medium |
+| sentencepiece | 0.2.1 | ✅ Latest | Patched | None |
+| transformers | 4.39.0 | 4.48.0 | Known vuln | High (if loading untrusted models) |
+| torch | 2.2.2 | 2.6.0 | Known vuln | High (if using torch.load on untrusted data) |
+| wandb | 0.16.6 | N/A | Advisory withdrawn | None |
+
+**Note**: The pinned versions are primarily for research reproducibility and replicating published results. This setup should **only be used in trusted, isolated environments** for research purposes.
