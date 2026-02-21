@@ -23,8 +23,10 @@ services:
     environment:
       # Environment variables can be set here or via .env file
       - PYTHONUNBUFFERED=1
+    # Load .env file if it exists (optional)
     env_file:
-      - .env
+      - path: .env
+        required: false
     # Memory configuration for training large models
     # Adjust these values based on your system resources
     # RoBERTa training typically requires 4-8GB RAM

@@ -30,5 +30,10 @@ RUN mkdir -p output logs
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 
+# Add startup script for better visibility
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Default command (can be overridden)
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["python", "main.py"]

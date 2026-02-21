@@ -158,7 +158,17 @@ docker-compose build
 
 This builds a Docker image with Python 3.11.6 and all pinned dependencies. **Note**: Git submodules are automatically cloned during the build process.
 
-**4. Run training and testing**
+**4. Run smoke test (Optional but Recommended)**
+
+Verify your setup with the automated smoke test:
+
+```bash
+./smoke_test.sh
+```
+
+This will check Docker installation, build the image, and verify all components are working correctly.
+
+**5. Run training and testing**
 
 ```bash
 docker-compose up
@@ -166,9 +176,9 @@ docker-compose up
 
 This will run the main.py script inside the container using the configuration in `config/config.yaml`.
 
-**Note**: Progress bars and logging output will be displayed in real-time thanks to the `tty: true` setting in docker-compose.yml, which enables interactive terminal output.
+**Note**: The container will display startup information including Python version, configuration details, and progress bars/logging output in real-time.
 
-**5. Access results**
+**6. Access results**
 
 Results will be available in the `output/` directory on your host machine, and logs in the `logs/` directory.
 
@@ -391,9 +401,49 @@ This project is designed to be fully reproducible across different machines and 
 
 ### Environment Specifications
 
-- **Python Version**: 3.11.6 (pinned)
+- **Python Version**: 3.11.6 (pinned in Dockerfile)
+- **Operating System**: Linux (Docker container based on Debian)
 - **All dependencies**: Version-pinned in `requirements.txt`
-- **Random seed**: Configurable in `config.yaml` (default: 42)
+- **Random seed**: 42 (set in `config.yaml`)
+- **Hardware requirements**: 
+  - CPU: Any modern x86_64 processor
+  - RAM: Minimum 8GB (12GB+ recommended for RoBERTa training)
+  - GPU: Optional (CUDA-compatible GPU for faster training)
+  - Disk: ~5GB for Docker image and dependencies
+
+### Exact Replication Configuration
+
+To reproduce the exact results from the paper:
+
+1. **Random Seed**: Set to `42` in `config/config.yaml`
+   ```yaml
+   random_seed: 42
+   ```
+
+2. **Model Configuration**: The paper uses configurations in `config/config_roberta.yaml` and `config/config_setfit.yaml`
+
+3. **Data**: Use the provided training and test splits:
+   - Training: `data/nasa_train_sample.csv` or full datasets (`data/cfs_train.csv`, `data/fprime_train.csv`)
+   - Testing: `data/nasa_test_sample.csv` or full datasets (`data/cfs_test.csv`, `data/fprime_test.csv`)
+
+4. **Hyperparameters**: All hyperparameters are specified in the model-specific config files
+
+### Smoke Test
+
+Run the automated smoke test to verify your setup:
+
+```bash
+./smoke_test.sh
+```
+
+This script will:
+- ✓ Check Docker installation
+- ✓ Verify all required files exist
+- ✓ Build the Docker image
+- ✓ Test container startup
+- ✓ Verify Python 3.11.6
+- ✓ Check all dependencies
+- ✓ Confirm submodule initialization
 
 ### Ensuring Reproducibility
 
