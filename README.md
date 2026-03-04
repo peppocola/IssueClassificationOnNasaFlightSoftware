@@ -201,8 +201,10 @@ Results will be available in the `output/` directory on your host machine, and l
 #### Model-Specific Information
 
 - **RoBERTa** (default): Fine-tunes RoBERTa-base model on sample data. Memory: 6-8GB RAM required.
-- **SetFit**: Efficient few-shot learning with SetFit. Memory: 2-4GB RAM required.
+- **SetFit**: Efficient few-shot learning with SetFit. Memory: 2-4GB RAM required (6GB limit configured for safety).
 - **LLM (Llama-2-7B)**: Zero-shot classification with 4-bit quantization. Memory: 8-12GB RAM required. GPU highly recommended for faster inference.
+
+**Important**: The Docker services are configured to use sample data (`nasa_*_sample.csv`) which already has merged text. The `config/config.yaml` has `text_columns` commented out to support this format. If you switch to full datasets (`cfs_*.csv`, `fprime_*.csv`), see the Troubleshooting section on Data Format Issues.
 
 #### Advanced Docker Usage
 
@@ -402,7 +404,7 @@ The LLM responses will be saved in the directory specified by `responses_dir`.
    ```
 
 **Memory Requirements by Model Type**:
-- SetFit: 2-4GB RAM
+- SetFit: 2-4GB RAM (6GB Docker limit for safety margin)
 - RoBERTa-base: 6-8GB RAM (12GB recommended)
 - LLM models: 8-16GB RAM (varies by model size)
 
@@ -439,6 +441,48 @@ docker-compose up nasa-classifier-llm
 - "FINAL CONFIGURATION: Model type: [setfit/llm/roberta]"
 
 If the final configuration still shows the wrong model type, check that docker-compose.yml has the correct `command:` setting for the service.
+
+#### Data Format Issues (text_columns Error)
+
+**Problem**: Training fails with errors about missing columns (e.g., "title" or "body" not found), or LLM prompting fails.
+
+**Cause**: The repository supports two data formats:
+1. **Sample data** (`nasa_*_sample.csv`): Has a single `text` column with pre-merged content
+2. **Full data** (`cfs_*.csv`, `fprime_*.csv`): Has separate `title` and `body` columns
+
+The default configuration (`config/config.yaml`) expects full data format with `title` and `body` columns that need to be merged.
+
+**Solution**:
+
+**For sample data** (default Docker setup):
+- The `text_columns` parameter should be commented out in `config/config.yaml` (already configured):
+  ```yaml
+  # text_columns:  # Commented out for sample data
+  #   - "title"
+  #   - "body"
+  label_column: "label"
+  merged_text_column: "text"
+  ```
+
+**For full data**:
+- Uncomment `text_columns` in `config/config.yaml`:
+  ```yaml
+  text_columns:
+    - "title"
+    - "body"
+  label_column: "label"
+  merged_text_column: "text"
+  ```
+- Update data paths in `config/config.yaml`:
+  ```yaml
+  train_path: "data/cfs_train.csv"  # or fprime_train.csv
+  test_path: "data/cfs_test.csv"    # or fprime_test.csv
+  ```
+
+**Note**: If you switch between sample and full data, remember to rebuild the Docker image:
+```bash
+docker-compose build --no-cache
+```
 
 ### Other Issues
 

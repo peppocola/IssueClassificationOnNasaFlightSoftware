@@ -8,9 +8,12 @@ test_path: "data/nasa_test_sample.csv"
 add_train: "data/nlbse_23_train.csv"
 
 # Column Params
-text_columns: 
-  - "title"
-  - "body"
+# NOTE: Comment out text_columns when using sample data (nasa_*_sample.csv)
+# Sample data already has a 'text' column and doesn't need merging
+# Uncomment for full datasets (cfs_*.csv, fprime_*.csv) that have separate title/body columns
+# text_columns: 
+#   - "title"
+#   - "body"
 label_column: "label"
 merged_text_column: "text"
 
