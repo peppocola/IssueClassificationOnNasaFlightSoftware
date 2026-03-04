@@ -1,7 +1,7 @@
 # LLM Model Configuration
 
 # Model
-model_name: "Qwen/Qwen2.5-4B"
+model_name: "Qwen/Qwen2.5-3B-Instruct"
 
 # Is openai model
 is_openai: false
