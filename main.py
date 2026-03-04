@@ -15,6 +15,8 @@ from data_processing.prompt_builder import PromptGenerator
 def parse_args():
     """Parse command line arguments for config overrides."""
     parser = argparse.ArgumentParser(description='NASA Issue Classification')
+    parser.add_argument('--config', type=str, default=None,
+                       help='Path to custom config file (e.g., config/config_llm_sample.yaml)')
     parser.add_argument('--config-override', nargs='*', default=[],
                        help='Override config values in format key=value (e.g., model_type=setfit just_predict=true)')
     return parser.parse_args()
@@ -48,8 +50,19 @@ def apply_config_overrides(config, overrides):
     
     return config
 
-def load_and_merge_configs(cli_overrides=None):
+def load_and_merge_configs(cli_overrides=None, custom_config_path=None):
     """Load and merge main configuration with model-specific configuration."""
+    # If custom config is provided, use it directly without merging
+    if custom_config_path:
+        print(f"Loading custom config from: {custom_config_path}")
+        config = load_config(custom_config_path)
+        if not config:
+            return None
+        # Apply CLI overrides to custom config
+        if cli_overrides:
+            config = apply_config_overrides(config, cli_overrides)
+        return config
+    
     main_config = load_config("config/config.yaml")
     if not main_config:
         return None
@@ -160,10 +173,12 @@ def main():
     print("="*50)
     args = parse_args()
     print(f"CLI Arguments parsed: {args}")
+    if args.config:
+        print(f"Custom config file: {args.config}")
     print(f"Config overrides: {args.config_override}")
     print("="*50)
     
-    config = load_and_merge_configs(args.config_override)
+    config = load_and_merge_configs(args.config_override, args.config)
     if not config:
         return
 
