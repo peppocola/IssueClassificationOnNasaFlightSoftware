@@ -37,12 +37,10 @@ services:
           memory: 8G  # Maximum memory allocation
         reservations:
           memory: 4G  # Minimum memory reservation
-    # Optionally specify GPU support (requires nvidia-docker)
-    # Uncomment the lines below to enable GPU
-    #   devices:
-    #     - driver: nvidia
-    #       count: 1
-    #       capabilities: [gpu]
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
   # SetFit training and testing on sample data
   nasa-classifier-setfit:
@@ -71,6 +69,10 @@ services:
           memory: 6G  # SetFit requires less memory than RoBERTa but still needs adequate resources
         reservations:
           memory: 3G
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
   # LLM (7B) zero-shot inference
   nasa-classifier-llm:
@@ -100,9 +102,7 @@ services:
           memory: 12G  # LLM requires more memory, even with 4-bit quantization
         reservations:
           memory: 8G
-    # GPU is highly recommended for LLM inference
-    # Uncomment if you have nvidia-docker configured
-    #   devices:
-    #     - driver: nvidia
-    #       count: 1
-    #       capabilities: [gpu]
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

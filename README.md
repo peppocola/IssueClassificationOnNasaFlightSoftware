@@ -225,11 +225,30 @@ docker-compose run nasa-classifier python main.py --config-override model_type=l
 
 **Run with GPU support:**
 
-Uncomment the `devices` section under the appropriate service in `docker-compose.yml` and ensure you have NVIDIA Docker runtime installed:
+GPU support is **enabled by default** in all three services. To use GPUs:
 
+1. Install NVIDIA Container Toolkit (if not already installed):
 ```bash
-docker-compose up
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/libnvidia-container/gpgkey | sudo apt-key add -
+curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
+  sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+sudo systemctl restart docker
 ```
+
+2. Verify GPU access:
+```bash
+docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
+```
+
+3. Run services (they will automatically use GPU):
+```bash
+docker-compose up                           # RoBERTa with GPU
+docker-compose up nasa-classifier-llm       # LLM with GPU (recommended)
+```
+
+**Note**: If you don't have a GPU or nvidia-docker, the services will fail to start. To disable GPU support, comment out the `devices` section under each service in `docker-compose.yml`.
 
 **Interactive shell inside container:**
 
