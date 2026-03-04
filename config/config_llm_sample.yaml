@@ -59,7 +59,7 @@ temperature: 0.0
 rebuild_prompts: true
 
 # Paths
-prompts_path: "data/prompts.json"
+prompts_path: "output/prompts.json"
 responses_dir: "output/llm_responses"
 template_path: "prompt/bin-template.yaml"
 
