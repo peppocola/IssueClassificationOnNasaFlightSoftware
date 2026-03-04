@@ -171,7 +171,15 @@ class PromptGenerator:
 
     def generate_prompts(self) -> None:
         for index, row in tqdm(self.dataset_iterator()):
-            replacements = {column: row[column] for column in self.config['text_columns']}
+            # Handle both cases: text_columns defined (full data) or not (sample data with merged text)
+            if 'text_columns' in self.config and self.config['text_columns']:
+                # Full data: merge title and body columns
+                replacements = {column: row[column] for column in self.config['text_columns']}
+            else:
+                # Sample data: use merged_text_column directly
+                merged_col = self.config.get('merged_text_column', 'text')
+                replacements = {'text': row[merged_col]}
+            
             example_to_classify = dict(row) if isinstance(self.dataset, HFDataset) else row.to_dict()
             crafted_prompt = self.craft_prompt(replacements)
             test_pair = {
