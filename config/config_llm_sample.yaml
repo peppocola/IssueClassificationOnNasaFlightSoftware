@@ -35,7 +35,7 @@ wandb:
 
 # LLM-specific Configuration
 # Model
-model_name: "meta-llama/Llama-2-7b-chat-hf"
+model_name: "Qwen/Qwen2.5-3B-Instruct"
 
 # Is openai model
 is_openai: false
