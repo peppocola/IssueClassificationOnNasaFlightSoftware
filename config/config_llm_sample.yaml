@@ -1,0 +1,29 @@
+# Model Configuration for LLM Sample Data
+model_type: "llm"
+random_seed: 42
+
+# Data Paths - using LLM-specific sample with title and body columns
+train_path: "data/nasa_train_sample.csv"  # Not used in zero-shot mode
+test_path: "data/nasa_llm_test_sample.csv"  # LLM sample with title/body columns
+add_train: "data/nlbse_23_train.csv"
+
+# Column Params
+# LLM sample data has separate title and body columns (needed for prompt templates)
+text_columns: 
+  - "title"
+  - "body"
+label_column: "label"
+merged_text_column: "text"
+
+# Output Configuration
+output_path: "output"
+
+# Prediction Mode
+just_predict: true  # LLM runs in zero-shot mode (prompting without fine-tuning)
+
+# Label Configuration
+label_to_int:
+  bug: 0
+  non-bug: 1
+
+# LLM-specific Configuration (inherits from config_llm.yaml)

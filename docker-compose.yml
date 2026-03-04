@@ -95,7 +95,7 @@ services:
     env_file:
       - path: .env
         required: false
-    command: python main.py --config-override model_type=llm just_predict=true
+    command: python main.py --config-override model_type=llm just_predict=true test_path=data/nasa_llm_test_sample.csv text_columns=['title','body']
     deploy:
       resources:
         limits:

@@ -202,9 +202,12 @@ Results will be available in the `output/` directory on your host machine, and l
 
 - **RoBERTa** (default): Fine-tunes RoBERTa-base model on sample data. Memory: 6-8GB RAM required.
 - **SetFit**: Efficient few-shot learning with SetFit. Memory: 2-4GB RAM required (6GB limit configured for safety).
-- **LLM (Llama-2-7B)**: Zero-shot classification with 4-bit quantization. Memory: 8-12GB RAM required. GPU highly recommended for faster inference.
+- **LLM (Llama-2-7B)**: Zero-shot classification with 4-bit quantization. Memory: 8-12GB RAM required. GPU highly recommended for faster inference. Uses `nasa_llm_test_sample.csv` which has separate `title` and `body` columns (required for prompt templates).
 
-**Important**: The Docker services are configured to use sample data (`nasa_*_sample.csv`) which already has merged text. The `config/config.yaml` has `text_columns` commented out to support this format. If you switch to full datasets (`cfs_*.csv`, `fprime_*.csv`), see the Troubleshooting section on Data Format Issues.
+**Important**: 
+- **RoBERTa and SetFit** use `nasa_*_sample.csv` files which have a single merged `text` column. The `config/config.yaml` has `text_columns` commented out for this format.
+- **LLM** uses `nasa_llm_test_sample.csv` which has separate `title` and `body` columns (needed for prompt templates). The docker-compose command includes these overrides automatically.
+- If you switch to full datasets (`cfs_*.csv`, `fprime_*.csv`), see the Troubleshooting section on Data Format Issues.
 
 #### Advanced Docker Usage
 
@@ -465,15 +468,14 @@ If the final configuration still shows the wrong model type, check that docker-c
 
 **Problem**: Training fails with errors about missing columns (e.g., "title" or "body" not found), or LLM prompting fails.
 
-**Cause**: The repository supports two data formats:
-1. **Sample data** (`nasa_*_sample.csv`): Has a single `text` column with pre-merged content
-2. **Full data** (`cfs_*.csv`, `fprime_*.csv`): Has separate `title` and `body` columns
-
-The default configuration (`config/config.yaml`) expects full data format with `title` and `body` columns that need to be merged.
+**Cause**: The repository supports three data file types:
+1. **Sample data for RoBERTa/SetFit** (`nasa_train_sample.csv`, `nasa_test_sample.csv`): Has a single `text` column with pre-merged content
+2. **Sample data for LLM** (`nasa_llm_test_sample.csv`): Has separate `title` and `body` columns (required for prompt templates)
+3. **Full data** (`cfs_*.csv`, `fprime_*.csv`): Has separate `title` and `body` columns
 
 **Solution**:
 
-**For sample data** (default Docker setup):
+**For RoBERTa/SetFit sample data** (default Docker setup for these models):
 - The `text_columns` parameter should be commented out in `config/config.yaml` (already configured):
   ```yaml
   # text_columns:  # Commented out for sample data
@@ -482,6 +484,10 @@ The default configuration (`config/config.yaml`) expects full data format with `
   label_column: "label"
   merged_text_column: "text"
   ```
+
+**For LLM sample data** (default Docker setup for LLM):
+- The docker-compose command automatically overrides to use `nasa_llm_test_sample.csv` with title/body columns
+- No manual configuration changes needed
 
 **For full data**:
 - Uncomment `text_columns` in `config/config.yaml`:
@@ -541,7 +547,8 @@ To reproduce the exact results from the paper:
 
 3. **Data**: Use the provided training and test splits:
    - Training: `data/nasa_train_sample.csv` or full datasets (`data/cfs_train.csv`, `data/fprime_train.csv`)
-   - Testing: `data/nasa_test_sample.csv` or full datasets (`data/cfs_test.csv`, `data/fprime_test.csv`)
+   - Testing for RoBERTa/SetFit: `data/nasa_test_sample.csv` or full datasets (`data/cfs_test.csv`, `data/fprime_test.csv`)
+   - Testing for LLM: `data/nasa_llm_test_sample.csv` (sampled from `cfs_test.csv` with title/body columns for prompt templates)
 
 4. **Hyperparameters**: All hyperparameters are specified in the model-specific config files
 
