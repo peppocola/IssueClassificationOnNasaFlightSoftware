@@ -52,6 +52,7 @@ fi
 echo ""
 
 echo "Starting application..."
+echo "Command: $@"
 echo "=================================="
 echo ""
 

@@ -155,12 +155,25 @@ def process_llm_model(config):
     
 
 def main():
+    print("="*50)
+    print("MAIN.PY STARTING")
+    print("="*50)
     args = parse_args()
+    print(f"CLI Arguments parsed: {args}")
+    print(f"Config overrides: {args.config_override}")
+    print("="*50)
+    
     config = load_and_merge_configs(args.config_override)
     if not config:
         return
 
     model_type = config.get('model_type', 'setfit')
+    print(f"\n{'='*50}")
+    print(f"FINAL CONFIGURATION:")
+    print(f"  Model type: {model_type}")
+    print(f"  Just predict: {config.get('just_predict', False)}")
+    print(f"  Random seed: {config.get('random_seed', 'not set')}")
+    print(f"{'='*50}\n")
     
     with wandb.init(project=config['wandb']['project'], 
                     entity=config['wandb']['entity'], 
