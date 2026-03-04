@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # Default service - RoBERTa training (already working)
   nasa-classifier:
     build:
       context: .
@@ -38,6 +39,69 @@ services:
           memory: 4G  # Minimum memory reservation
     # Optionally specify GPU support (requires nvidia-docker)
     # Uncomment the lines below to enable GPU
+    #   devices:
+    #     - driver: nvidia
+    #       count: 1
+    #       capabilities: [gpu]
+
+  # SetFit training and testing on sample data
+  nasa-classifier-setfit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nasa-issue-classifier:latest
+    container_name: nasa-classifier-setfit
+    tty: true
+    stdin_open: true
+    volumes:
+      - ./data:/app/data:ro
+      - ./config:/app/config:ro
+      - ./output:/app/output
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MODEL_TYPE=setfit
+    env_file:
+      - path: .env
+        required: false
+    command: python main.py --config-override model_type=setfit
+    deploy:
+      resources:
+        limits:
+          memory: 4G  # SetFit requires less memory
+        reservations:
+          memory: 2G
+
+  # LLM (7B) zero-shot inference
+  nasa-classifier-llm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nasa-issue-classifier:latest
+    container_name: nasa-classifier-llm
+    tty: true
+    stdin_open: true
+    volumes:
+      - ./data:/app/data:ro
+      - ./config:/app/config:ro
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - ./prompt:/app/prompt:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MODEL_TYPE=llm
+    env_file:
+      - path: .env
+        required: false
+    command: python main.py --config-override model_type=llm just_predict=true
+    deploy:
+      resources:
+        limits:
+          memory: 12G  # LLM requires more memory, even with 4-bit quantization
+        reservations:
+          memory: 8G
+    # GPU is highly recommended for LLM inference
+    # Uncomment if you have nvidia-docker configured
     #   devices:
     #     - driver: nvidia
     #       count: 1

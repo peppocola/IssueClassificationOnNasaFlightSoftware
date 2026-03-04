@@ -1,4 +1,6 @@
 import os
+import sys
+import argparse
 import wandb
 from config.config_loader import load_config
 from data_processing.dataset_utils import preprocess_dataset, print_label_distribution, map_labels_in_dataset
@@ -10,11 +12,51 @@ from setfit import SetFitModel
 from evaluation.llm_response_eval import LLMEvaluator
 from data_processing.prompt_builder import PromptGenerator
 
-def load_and_merge_configs():
+def parse_args():
+    """Parse command line arguments for config overrides."""
+    parser = argparse.ArgumentParser(description='NASA Issue Classification')
+    parser.add_argument('--config-override', nargs='*', default=[],
+                       help='Override config values in format key=value (e.g., model_type=setfit just_predict=true)')
+    return parser.parse_args()
+
+def apply_config_overrides(config, overrides):
+    """Apply command-line config overrides to the configuration."""
+    if not overrides:
+        return config
+    
+    for override in overrides:
+        if '=' not in override:
+            print(f"Warning: Invalid override format '{override}'. Expected key=value")
+            continue
+        
+        key, value = override.split('=', 1)
+        key = key.strip()
+        value = value.strip()
+        
+        # Convert string values to appropriate types
+        if value.lower() == 'true':
+            value = True
+        elif value.lower() == 'false':
+            value = False
+        elif value.isdigit():
+            value = int(value)
+        elif value.replace('.', '', 1).isdigit():
+            value = float(value)
+        
+        config[key] = value
+        print(f"Config override: {key} = {value}")
+    
+    return config
+
+def load_and_merge_configs(cli_overrides=None):
     """Load and merge main configuration with model-specific configuration."""
     main_config = load_config("config/config.yaml")
     if not main_config:
         return None
+    
+    # Apply CLI overrides to main config first
+    if cli_overrides:
+        main_config = apply_config_overrides(main_config, cli_overrides)
 
     model_type = main_config.get('model_type', 'setfit')
 
@@ -106,7 +148,8 @@ def process_llm_model(config):
     
 
 def main():
-    config = load_and_merge_configs()
+    args = parse_args()
+    config = load_and_merge_configs(args.config_override)
     if not config:
         return
 

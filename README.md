@@ -170,11 +170,22 @@ This will check Docker installation, build the image, and verify all components 
 
 **5. Run training and testing**
 
+**Default (RoBERTa):**
 ```bash
 docker-compose up
 ```
 
-This will run the main.py script inside the container using the configuration in `config/config.yaml`.
+**SetFit training on sample data:**
+```bash
+docker-compose up nasa-classifier-setfit
+```
+
+**LLM (Llama-2-7B) zero-shot inference:**
+```bash
+docker-compose up nasa-classifier-llm
+```
+
+These commands will run the respective models inside containers using the configurations in the `config/` directory.
 
 **Note**: The container will display startup information including Python version, configuration details, and progress bars/logging output in real-time.
 
@@ -182,17 +193,32 @@ This will run the main.py script inside the container using the configuration in
 
 Results will be available in the `output/` directory on your host machine, and logs in the `logs/` directory.
 
+#### Model-Specific Information
+
+- **RoBERTa** (default): Fine-tunes RoBERTa-base model on sample data. Memory: 6-8GB RAM required.
+- **SetFit**: Efficient few-shot learning with SetFit. Memory: 2-4GB RAM required.
+- **LLM (Llama-2-7B)**: Zero-shot classification with 4-bit quantization. Memory: 8-12GB RAM required. GPU highly recommended for faster inference.
+
 #### Advanced Docker Usage
 
-**Run with custom configuration:**
+**Run with custom configuration overrides:**
+
+You can override configuration values from the command line:
 
 ```bash
-docker-compose run nasa-classifier python main.py
+# Run SetFit with different parameters
+docker-compose run nasa-classifier python main.py --config-override model_type=setfit num_epochs=2
+
+# Run in prediction-only mode
+docker-compose run nasa-classifier python main.py --config-override just_predict=true
+
+# Multiple overrides
+docker-compose run nasa-classifier python main.py --config-override model_type=llm just_predict=true
 ```
 
 **Run with GPU support:**
 
-Uncomment the `deploy` section in `docker-compose.yml` and ensure you have NVIDIA Docker runtime installed:
+Uncomment the `devices` section under the appropriate service in `docker-compose.yml` and ensure you have NVIDIA Docker runtime installed:
 
 ```bash
 docker-compose up
