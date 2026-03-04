@@ -158,6 +158,11 @@ docker-compose build
 
 This builds a Docker image with Python 3.11.6 and all pinned dependencies. **Note**: Git submodules are automatically cloned during the build process.
 
+**Important**: If you pull new code changes or switch branches, rebuild without cache:
+```bash
+docker-compose build --no-cache
+```
+
 **4. Run smoke test (Optional but Recommended)**
 
 Verify your setup with the automated smoke test:
@@ -411,6 +416,29 @@ Submodules are automatically cloned during Docker build. If missing, rebuild the
 ```bash
 docker-compose build --no-cache
 ```
+
+#### Config Overrides Not Working / Wrong Model Running
+
+**Problem**: Running `docker-compose up nasa-classifier-setfit` or `nasa-classifier-llm` still executes RoBERTa instead of the intended model.
+
+**Cause**: Docker is using a cached image that doesn't include the latest code changes.
+
+**Solution**: Rebuild the image without cache:
+```bash
+# Force rebuild without cache
+docker-compose build --no-cache
+
+# Then run the desired service
+docker-compose up nasa-classifier-setfit
+docker-compose up nasa-classifier-llm
+```
+
+**Verification**: After rebuilding, you should see debug output showing:
+- "Command: python main.py --config-override model_type=..."
+- "CLI Arguments parsed: ..."
+- "FINAL CONFIGURATION: Model type: [setfit/llm/roberta]"
+
+If the final configuration still shows the wrong model type, check that docker-compose.yml has the correct `command:` setting for the service.
 
 ### Other Issues
 
