@@ -29,13 +29,26 @@ fi
 # Display configuration info
 echo "Configuration:"
 if [ -f "config/config.yaml" ]; then
-    echo "  Model type: $(grep 'model_type:' config/config.yaml | awk '{print $2}' | tr -d '"')"
+    echo "  Base model type: $(grep 'model_type:' config/config.yaml | awk '{print $2}' | tr -d '"')"
     echo "  Random seed: $(grep 'random_seed:' config/config.yaml | awk '{print $2}')"
     echo "  Train data: $(grep 'train_path:' config/config.yaml | awk '{print $2}' | tr -d '"')"
     echo "  Test data: $(grep 'test_path:' config/config.yaml | awk '{print $2}' | tr -d '"')"
 else
     echo "  ⚠️  config/config.yaml not found!"
 fi
+
+# Check for command-line overrides
+if [[ "$*" == *"--config-override"* ]]; then
+    echo ""
+    echo "Command-line overrides detected:"
+    # Extract the overrides from command arguments
+    for arg in "$@"; do
+        if [[ "$arg" == *"="* ]] && [[ "$arg" != "--config-override" ]]; then
+            echo "  → $arg"
+        fi
+    done
+fi
+
 echo ""
 
 echo "Starting application..."

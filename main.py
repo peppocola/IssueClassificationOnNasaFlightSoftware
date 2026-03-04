@@ -54,11 +54,12 @@ def load_and_merge_configs(cli_overrides=None):
     if not main_config:
         return None
     
-    # Apply CLI overrides to main config first
+    # Apply CLI overrides to main config first to determine model_type
+    temp_config = main_config.copy()
     if cli_overrides:
-        main_config = apply_config_overrides(main_config, cli_overrides)
+        temp_config = apply_config_overrides(temp_config, cli_overrides)
 
-    model_type = main_config.get('model_type', 'setfit')
+    model_type = temp_config.get('model_type', 'setfit')
 
     # Load model-specific config
     model_config_path = main_config.get(f'config_{model_type}_path', f'config/config_{model_type}.yaml')
@@ -67,7 +68,13 @@ def load_and_merge_configs(cli_overrides=None):
         return None
 
     # Merge main config with model-specific config, prioritizing model-specific settings
-    return {**main_config, **model_config}
+    merged_config = {**main_config, **model_config}
+    
+    # Apply CLI overrides AFTER merging to ensure they take precedence
+    if cli_overrides:
+        merged_config = apply_config_overrides(merged_config, cli_overrides)
+    
+    return merged_config
 
 def flatten_metrics(metrics):
     """Flatten a nested dictionary of metrics."""
