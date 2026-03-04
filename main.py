@@ -197,10 +197,26 @@ def main():
                     dir='./logs'):
 
         if model_type == 'llm':
+            print("\n" + "="*60)
+            print("🤖 LLM MODE: Starting zero-shot inference")
+            print("="*60)
+            print(f"Model: {config.get('model_name', 'unknown')}")
+            print(f"Quantization: {config.get('load_in_4bit', False) and '4-bit' or 'full precision'}")
+            print(f"Test file: {config.get('test_path', 'unknown')}")
+            print("="*60 + "\n")
+            
             if config.get('rebuild_prompts', False):
+                print("📝 Generating prompts from test data...")
                 prompt_generator = PromptGenerator(config)
                 prompt_generator.run()
+                print("✅ Prompts generated successfully\n")
+            
+            print("🔄 Starting LLM inference (this may take several minutes)...")
+            print("   - Loading model and tokenizer...")
+            print("   - Processing prompts...")
+            print("   - Generating predictions...\n")
             process_llm_prompts(config)
+            print("\n✅ LLM inference completed successfully!")
         else:
             # Prepare datasets
             train_set, test_set = preprocess_dataset(config)
