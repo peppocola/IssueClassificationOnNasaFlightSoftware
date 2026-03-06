@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  # Default service - RoBERTa training (already working)
+  nasa-classifier:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nasa-issue-classifier:latest
+    container_name: nasa-classifier
+    tty: true  # Allocate a pseudo-TTY for progress bars and interactive output
+    stdin_open: true  # Keep STDIN open for interactive applications
+    volumes:
+      # Mount data directory (read-only for reproducibility)
+      - ./data:/app/data:ro
+      # Mount config directory to allow easy config changes
+      - ./config:/app/config:ro
+      # Mount output directory to persist results
+      - ./output:/app/output
+      # Mount logs directory to persist logs
+      - ./logs:/app/logs
+      # Mount prompt directory if using LLM
+      - ./prompt:/app/prompt:ro
+    environment:
+      # Environment variables can be set here or via .env file
+      - PYTHONUNBUFFERED=1
+    # Load .env file if it exists (optional)
+    env_file:
+      - path: .env
+        required: false
+    # Memory configuration for training large models
+    # Adjust these values based on your system resources
+    # RoBERTa training typically requires 4-8GB RAM
+    deploy:
+      resources:
+        limits:
+          memory: 8G  # Maximum memory allocation
+        reservations:
+          memory: 4G  # Minimum memory reservation
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # SetFit training and testing on sample data
+  nasa-classifier-setfit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nasa-issue-classifier:latest
+    container_name: nasa-classifier-setfit
+    tty: true
+    stdin_open: true
+    volumes:
+      - ./data:/app/data:ro
+      - ./config:/app/config:ro
+      - ./output:/app/output
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MODEL_TYPE=setfit
+    env_file:
+      - path: .env
+        required: false
+    command: python main.py --config-override model_type=setfit
+    deploy:
+      resources:
+        limits:
+          memory: 6G  # SetFit requires less memory than RoBERTa but still needs adequate resources
+        reservations:
+          memory: 3G
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # LLM (7B) zero-shot inference
+  nasa-classifier-llm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nasa-issue-classifier:latest
+    container_name: nasa-classifier-llm
+    tty: true
+    stdin_open: true
+    volumes:
+      - ./data:/app/data:ro
+      - ./config:/app/config:ro
+      - ./output:/app/output
+      - ./logs:/app/logs
+      - ./prompt:/app/prompt:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MODEL_TYPE=llm
+    env_file:
+      - path: .env
+        required: false
+    command: python main.py --config config/config_llm_sample.yaml
+    deploy:
+      resources:
+        limits:
+          memory: 12G  # LLM requires more memory, even with 4-bit quantization
+        reservations:
+          memory: 8G
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

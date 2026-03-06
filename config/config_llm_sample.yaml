@@ -1,0 +1,67 @@
+# Model Configuration for LLM Sample Data
+model_type: "llm"
+random_seed: 42
+
+# Data Paths - using LLM-specific sample with title and body columns
+train_path: "data/nasa_train_sample.csv"  # Not used in zero-shot mode
+test_path: "data/nasa_llm_test_sample.csv"  # LLM sample with title/body columns
+add_train: "data/nlbse_23_train.csv"
+
+# Column Params
+# LLM sample data has separate title and body columns (needed for prompt templates)
+text_columns: 
+  - "title"
+  - "body"
+label_column: "label"
+merged_text_column: "text"
+
+# Output Configuration
+output_path: "output"
+
+# Prediction Mode
+just_predict: true  # LLM runs in zero-shot mode (prompting without fine-tuning)
+
+# Label Configuration
+label_to_int:
+  bug: 0
+  non-bug: 1
+
+# Weights & Biases Configuration
+wandb:
+  project: "cFS-bug-nobug"
+  entity: "collab-uniba"
+  log_model: false
+  mode: "offline"
+
+# LLM-specific Configuration
+# Model
+model_name: "Qwen/Qwen2.5-3B-Instruct"
+
+# Is openai model
+is_openai: false
+openai_organization: "YOUR_ORGANIZATION_ID"
+
+# Quantization
+load_in_4bit: true
+bnb_4bit_quant_type: "nf4"
+bnb_4bit_use_double_quant: true
+
+# Settings
+use_system_message: false
+use_label_explanation: false
+few_shot_prompt: false
+n_shots: 0
+max_input_token_length: 2048
+max_new_tokens: 500
+temperature: 0.0
+
+# Rebuild prompts
+rebuild_prompts: true
+
+# Paths
+prompts_path: "output/prompts.json"
+responses_dir: "output/llm_responses"
+template_path: "prompt/bin-template.yaml"
+
+# Other settings
+save_every: 32

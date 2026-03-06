@@ -28,7 +28,7 @@ class BaseLLMInference(ABC):
             self.prompts = json.load(file)
         if self.responses:
             self.prompts = {k: v for k, v in self.prompts.items() if k not in self.responses}
-        if len(prompts) < 1:
+        if len(self.prompts) < 1:
             raise Exception("No prompts to process. All prompts have already been processed.")
         self.logger.info(f"Loaded {len(self.prompts)} prompts")
 
@@ -56,13 +56,23 @@ class BaseLLMInference(ABC):
         pass
 
     def run(self):
+        print("\n🚀 Starting LLM inference pipeline...")
+        print("="*60)
         self.setup()
+        print("\n📂 Loading previous responses (if any)...")
         self.load_responses()
+        print(f"   Found {len(self.responses)} existing responses")
+        print("\n📝 Loading prompts...")
         self.load_prompts()
+        print(f"   Loaded {len(self.prompts)} prompts to process")
         self.logger.info("Starting inference")
+        print("\n🔮 Processing prompts and generating predictions...")
+        print("   (Progress will be shown every batch)\n")
         self.process_prompts()
         self.logger.info("Inference complete")
         self.logger.info(f"Responses saved to {self.responses_path}")
+        print(f"\n✅ All done! Responses saved to: {self.responses_path}")
+        print("="*60 + "\n")
 
 class LLMInference(BaseLLMInference):
     def __init__(self, config):
@@ -72,6 +82,9 @@ class LLMInference(BaseLLMInference):
         self.model = None
 
     def setup(self):
+        print(f"\n📦 Setting up LLM: {self.config['model_name']}")
+        print("   This may take several minutes on first run (downloading model)...")
+        
         nf4_config = BitsAndBytesConfig(
             load_in_4bit=self.config['load_in_4bit'],
             bnb_4bit_quant_type=self.config['bnb_4bit_quant_type'],
@@ -82,7 +95,11 @@ class LLMInference(BaseLLMInference):
         self.logger.info(f"Using model: {self.config['model_name']}")
         self.logger.info(f"Loading model and tokenizer")
 
+        print("   ⏳ Loading tokenizer...")
         self.tokenizer = AutoTokenizer.from_pretrained(self.config["model_name"])
+        print("   ✅ Tokenizer loaded")
+        
+        print("   ⏳ Loading model (this is the slow part)...")
         self.accelerator = Accelerator()
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config["model_name"],    
@@ -90,6 +107,7 @@ class LLMInference(BaseLLMInference):
             torch_dtype=torch.bfloat16,
             quantization_config=nf4_config
         )
+        print("   ✅ Model loaded successfully!")
 
         self.logger.info(f"Model and tokenizer loaded")
 
@@ -101,8 +119,12 @@ class LLMInference(BaseLLMInference):
         num_batches = ceil(len(self.prompts) / save_every)
         results = dict(outputs={}, num_tokens=0)
         keys = list(self.prompts.keys())
+        
+        print(f"📊 Processing {len(self.prompts)} prompts in {num_batches} batches")
+        print(f"   Batch size: {save_every} prompts per batch\n")
 
         for batch_idx in range(num_batches):
+            print(f"⏳ Batch {batch_idx + 1}/{num_batches} - Processing prompts {batch_idx * save_every + 1} to {min((batch_idx + 1) * save_every, len(self.prompts))}...")
             start_idx = batch_idx * save_every
             end_idx = start_idx + save_every
             batch_ids = keys[start_idx:end_idx]
@@ -149,7 +171,9 @@ class LLMInference(BaseLLMInference):
             timediff = time.time() - start
             num_tokens = sum([r["num_tokens"] for r in results_gathered])
 
-            self.logger.info(f"tokens/sec: {num_tokens // timediff}, time {timediff}, total tokens {num_tokens}, total prompts {len(self.prompts)}")
+            tokens_per_sec = num_tokens // timediff if timediff > 0 else 0
+            print(f"   ✅ Batch {batch_idx + 1} complete: {tokens_per_sec} tokens/sec, {len(self.responses)} total responses processed")
+            self.logger.info(f"tokens/sec: {tokens_per_sec}, time {timediff}, total tokens {num_tokens}, total prompts {len(self.prompts)}")
             
             # Log to wandb
             wandb.log({

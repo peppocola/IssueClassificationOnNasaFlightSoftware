@@ -1,0 +1,142 @@
+title,body,label,url
+Benchmark memcpy of full event packet vs size of the actual event message and memset the rest to zero,"**Is your feature request related to a problem? Please describe.**
+May be able to improve event services performance wrt writing the event to the log:
+https://github.com/nasa/cFE/blob/e80aae94e0f56b868657daba965c590766a4dc57/modules/evs/fsw/src/cfe_evs_log.c#L67
+
+by replacing this with a memcpy of the used portion and a memset 0 for the rest.
+
+**Describe the solution you'd like**
+Benchmark, if the memcpy/memset is significantly faster consider implementing.
+
+**Describe alternatives you've considered**
+It's likely all hardware/compiler/optimization dependent and probably in the noise (may not even notice when flooded w/ events).  If it's not worth it we can mark as wontfix and close, but at least it's documented.
+
+**Additional context**
+Code review
+
+**Requester Info**
+Jacob Hageman - NASA/GSFC
+",non-bug,https://github.com/nasa/cFE/issues/1402
+Allow UT assert tests to specify default verbosity,"**Is your feature request related to a problem? Please describe.**
+By default, UT assert runs in verbose (not debug) mode, where all calls to any assert macro are added to a log, except for DEBUG messages.  This means there is a record of tests that PASS, which is generally desired for coverage testing.
+
+However, if doing fuzz testing, the point is to run a test against a large, random data set and as such there may be thousands (or even millions) of assertions.  This will result in a very large log file full of ""PASS"" messages.
+
+UT Assert does allow the verbosity to be set, but currently only via command line on a run-by-run basis.
+
+**Describe the solution you'd like**
+Allow a test to specify what its default verbosity is supposed to be.  For fuzz testing this can be a lower value than the normal coverage testing default.  
+
+**Describe alternatives you've considered**
+Currently test cases that run in a loop or otherwise would generate a large number of PASS results use a pattern where the result is checked directly in the test code, e.g.:
+
+```
+if (status != expected)
+{
+    UtAssert_Failed(""message"");
+}
+```
+
+Such that an assertion is only logged if it fails.  However, a side effect of this means that the ""pass"" counter and total test counter does not increment to reflect that something was tested/checked - it only increments if it fails.  In contrast, by using the normal assert macro but reducing the verbosity means that the counters will still increment, it just doesn't write a log entry for PASS cases.  Furthermore, a user could manually _increase_ the log level if they actually do want to see them all.
+
+**Requester Info**
+Joseph Hickey, Vantage Systems, Inc.
+",non-bug,https://github.com/nasa/osal/issues/1317
+Static analysis issues relative to flight code,"Handful of static analysis issues in the ""red"" identified (non-Style issues).  Need to resolve these.
+
+Filter: -file:elf -file:ut -file:cfe -file:os -file:cf_ -file:_lab_app.c !(significance:style)
+
+should resolve and/or disposition the higher ranked ones at minimum.
+
+Note license restricts publishing issues.
+
+Imported from GSFCCFS-1958",bug,https://github.com/nasa/FM/issues/19
+Incomplete OSAL error conversion in CFE_ES_ReloadApp,"**Describe the bug**
+The CFE_ES_ReloadApp function uses the function OS_stat to perform its work. The error handling in CFE_ES_ReloadApp assumes any failure in OS_stat is due to a file IO issue. This may not be the case because if a null pointer is passed in as the file name OS_stat will return an OS_INVALID_POINTER, but this specific error code will be ignored and CFE_ES_ReloadApp will just output CFE_ES_FILE_IO_ERR instead of a CFE_ES_BAD_ARGUMENT.
+
+**To Reproduce**
+Steps to reproduce the behavior:
+1. Call CFE_ES_ReloadApp with a null pointer for filename. It will return a CFE_ES_FILE_IO_ERR when the real issue was a bad argument.
+
+**Expected behavior**
+CFE_ES_ReloadApp could include a null check itself to provide a more specific error message or the OS_INVALID_POINTER returned by OS_stat could be converted to a specific CFE error code.
+
+**Additional context**
+See #1672 for a similar error conversion issue
+
+**Reporter Info**
+Niall Mullane - GSFC 582 Intern
+",non-bug,https://github.com/nasa/cFE/issues/1723
+Cppcheck flagging BUGCHECK macro as syntax error,"**Describe the bug**
+The use of the `BUGCHECK` macro with the second argument blank looks suspicious and it is reported as a syntax error by newer versions of the `cppcheck` tool:
+
+```
+Checking src/os/shared/src/osapi-printf.c ...
+src/os/shared/src/osapi-printf.c:269:30: error: syntax error [syntaxError]
+    BUGCHECK((String) != NULL, )
+                             ^
+```
+
+**To Reproduce**
+Execute a recent version of `cppcheck` against OSAL source code - observed in version 2.7.
+
+**Expected behavior**
+Should pass cleanly
+
+**System observed on:**
+Ubuntu 22.04
+
+**Additional context**
+The second argument being blank here is intentional, because it is a return value and this is a void function, so it needs to be empty.  The syntax is actually valid but it is just a bit unusual.
+
+**Reporter Info**
+Joseph Hickey, Vantage Systems, Inc.
+
+",bug,https://github.com/nasa/osal/issues/1322
+Remove obsolete comments,"**Is your feature request related to a problem? Please describe.**
+End of function comments historically poorly maintained, so not really worth keeping around.  Name of a function in comments also frequently gets out of date.
+
+Example of differences (needs full scrub):
+https://github.com/nasa/to_lab/blob/c20250e6fc7ab51cbd9f82329a25be31193cd6a3/fsw/src/to_lab_app.c#L476
+https://github.com/nasa/to_lab/blob/c20250e6fc7ab51cbd9f82329a25be31193cd6a3/fsw/src/to_lab_app.c#L493
+
+**Describe the solution you'd like**
+Remove obsolete comments
+
+**Describe alternatives you've considered**
+None
+
+**Additional context**
+None.
+
+**Requester Info**
+Jacob Hageman - NASA/GSFC",non-bug,https://github.com/nasa/to_lab/issues/68
+CF function CF_CFDP_ProcessPlaybackDirectory has an oddly bracketed block,"**This issue was imported from the GSFC issue tracking system**
+
+_Imported from_: [GSFCCFS-1732] CF function CF_CFDP_ProcessPlaybackDirectory has an oddly bracketed block
+_Originally submitted by_: Gibson, Alan S. (GSFC-5870) on Wed Sep 22 09:22:05 2021
+
+_Original Description_:
+In cfdp.c the function CF\_CFDP\_ProcessPlaybackDirectory has a block of code with no if/while et. Just a bracketed block of code that does not seem to have a reason to be bracketed.  
+",non-bug,https://github.com/nasa/CF/issues/31
+CFE_EVS_Register Filters argument should be of type CFE_EVS_BinFilter_t *,"If the Filters argument of CFE_EVS_Register is not null, it is always cast to ""CFE_EVS_BinFilter_t *"", the parameter should be of that type and not ""void *"". (If users want to pass another type that is compatible, they can cast on their call to make it explicit.) void * invites passing the wrong type of pointer.",bug,https://github.com/nasa/cFE/issues/197
+Remove all mentions of ASIST or ITOS artifacts from documentation,"Some of our doxygen docs still reference ASIST or ITOS artifacts. 
+
+See 
+cfs_mm repo: fsw/src/mm_msgdefs.h:l28
+
+Imported from GSFCCFS-1929",non-bug,https://github.com/nasa/SC/issues/20
+"Add pc-linux toolchain ""cross-compile"" to CI","**Is your feature request related to a problem? Please describe.**
+Current CI uses SIMULATION=native for all builds
+
+**Describe the solution you'd like**
+Add one non-simulation build, consider matrix model as used in osal
+
+**Describe alternatives you've considered**
+None
+
+**Additional context**
+nasa/cFE#629 - failure that wasn't caught
+
+**Requester Info**
+Jacob Hageman - NASA/GSFC",non-bug,https://github.com/nasa/cFS/issues/69

@@ -1,4 +1,6 @@
 import os
+import sys
+import argparse
 import wandb
 from config.config_loader import load_config
 from data_processing.dataset_utils import preprocess_dataset, print_label_distribution, map_labels_in_dataset
@@ -10,13 +12,67 @@ from setfit import SetFitModel
 from evaluation.llm_response_eval import LLMEvaluator
 from data_processing.prompt_builder import PromptGenerator
 
-def load_and_merge_configs():
+def parse_args():
+    """Parse command line arguments for config overrides."""
+    parser = argparse.ArgumentParser(description='NASA Issue Classification')
+    parser.add_argument('--config', type=str, default=None,
+                       help='Path to custom config file (e.g., config/config_llm_sample.yaml)')
+    parser.add_argument('--config-override', nargs='*', default=[],
+                       help='Override config values in format key=value (e.g., model_type=setfit just_predict=true)')
+    return parser.parse_args()
+
+def apply_config_overrides(config, overrides):
+    """Apply command-line config overrides to the configuration."""
+    if not overrides:
+        return config
+    
+    for override in overrides:
+        if '=' not in override:
+            print(f"Warning: Invalid override format '{override}'. Expected key=value")
+            continue
+        
+        key, value = override.split('=', 1)
+        key = key.strip()
+        value = value.strip()
+        
+        # Convert string values to appropriate types
+        if value.lower() == 'true':
+            value = True
+        elif value.lower() == 'false':
+            value = False
+        elif value.isdigit():
+            value = int(value)
+        elif value.replace('.', '', 1).isdigit():
+            value = float(value)
+        
+        config[key] = value
+        print(f"Config override: {key} = {value}")
+    
+    return config
+
+def load_and_merge_configs(cli_overrides=None, custom_config_path=None):
     """Load and merge main configuration with model-specific configuration."""
+    # If custom config is provided, use it directly without merging
+    if custom_config_path:
+        print(f"Loading custom config from: {custom_config_path}")
+        config = load_config(custom_config_path)
+        if not config:
+            return None
+        # Apply CLI overrides to custom config
+        if cli_overrides:
+            config = apply_config_overrides(config, cli_overrides)
+        return config
+    
     main_config = load_config("config/config.yaml")
     if not main_config:
         return None
+    
+    # Apply CLI overrides to main config first to determine model_type
+    temp_config = main_config.copy()
+    if cli_overrides:
+        temp_config = apply_config_overrides(temp_config, cli_overrides)
 
-    model_type = main_config.get('model_type', 'setfit')
+    model_type = temp_config.get('model_type', 'setfit')
 
     # Load model-specific config
     model_config_path = main_config.get(f'config_{model_type}_path', f'config/config_{model_type}.yaml')
@@ -25,7 +81,13 @@ def load_and_merge_configs():
         return None
 
     # Merge main config with model-specific config, prioritizing model-specific settings
-    return {**main_config, **model_config}
+    merged_config = {**main_config, **model_config}
+    
+    # Apply CLI overrides AFTER merging to ensure they take precedence
+    if cli_overrides:
+        merged_config = apply_config_overrides(merged_config, cli_overrides)
+    
+    return merged_config
 
 def flatten_metrics(metrics):
     """Flatten a nested dictionary of metrics."""
@@ -106,11 +168,27 @@ def process_llm_model(config):
     
 
 def main():
-    config = load_and_merge_configs()
+    print("="*50)
+    print("MAIN.PY STARTING")
+    print("="*50)
+    args = parse_args()
+    print(f"CLI Arguments parsed: {args}")
+    if args.config:
+        print(f"Custom config file: {args.config}")
+    print(f"Config overrides: {args.config_override}")
+    print("="*50)
+    
+    config = load_and_merge_configs(args.config_override, args.config)
     if not config:
         return
 
     model_type = config.get('model_type', 'setfit')
+    print(f"\n{'='*50}")
+    print(f"FINAL CONFIGURATION:")
+    print(f"  Model type: {model_type}")
+    print(f"  Just predict: {config.get('just_predict', False)}")
+    print(f"  Random seed: {config.get('random_seed', 'not set')}")
+    print(f"{'='*50}\n")
     
     with wandb.init(project=config['wandb']['project'], 
                     entity=config['wandb']['entity'], 
@@ -119,10 +197,26 @@ def main():
                     dir='./logs'):
 
         if model_type == 'llm':
+            print("\n" + "="*60)
+            print("🤖 LLM MODE: Starting zero-shot inference")
+            print("="*60)
+            print(f"Model: {config.get('model_name', 'unknown')}")
+            print(f"Quantization: {config.get('load_in_4bit', False) and '4-bit' or 'full precision'}")
+            print(f"Test file: {config.get('test_path', 'unknown')}")
+            print("="*60 + "\n")
+            
             if config.get('rebuild_prompts', False):
+                print("📝 Generating prompts from test data...")
                 prompt_generator = PromptGenerator(config)
                 prompt_generator.run()
+                print("✅ Prompts generated successfully\n")
+            
+            print("🔄 Starting LLM inference (this may take several minutes)...")
+            print("   - Loading model and tokenizer...")
+            print("   - Processing prompts...")
+            print("   - Generating predictions...\n")
             process_llm_prompts(config)
+            print("\n✅ LLM inference completed successfully!")
         else:
             # Prepare datasets
             train_set, test_set = preprocess_dataset(config)

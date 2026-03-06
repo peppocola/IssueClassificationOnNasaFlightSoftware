@@ -111,8 +111,175 @@ config_llm_path: "config/config_llm.yaml"
 
 ## Usage
 
-### Prerequisites
-Python 3.11 or higher is required to run this project. You can check your Python version by running:
+### Reproducibility with Docker (Recommended)
+
+This project provides a fully reproducible environment using Docker. This is the **recommended approach** for ensuring consistent results across different machines.
+
+#### Prerequisites for Docker
+- Docker (version 20.10 or higher)
+- Docker Compose (version 1.29 or higher, or Docker Compose V2 integrated with Docker)
+- NVIDIA Docker runtime (optional, for GPU support)
+- **System RAM**: Minimum 8GB RAM (12GB+ recommended for RoBERTa training)
+
+**Note**: Commands in this guide use `docker-compose` (V1). If you have Docker Compose V2, use `docker compose` (without hyphen) instead.
+
+**Memory Configuration**: The docker-compose.yml is configured to use up to 8GB of RAM. If training fails with exit code 137 (out of memory), see the Troubleshooting section below.
+
+#### Setup with Docker
+
+**1. Clone the repository**
+
+```bash
+git clone https://github.com/peppocola/NasaExperiments.git
+cd NasaExperiments
+```
+
+Don't forget to initialize and update the submodules:
+
+```bash
+git submodule init
+git submodule update
+```
+
+**2. Create `.env` file**
+
+Create a `.env` file in the root directory with your API keys:
+
+```bash
+WANDB_API_KEY=your-wandb-api-key
+OPENAI_API_KEY=your-openai-api-key
+```
+
+**3. Build the Docker image**
+
+```bash
+docker-compose build
+```
+
+This builds a Docker image with Python 3.11.6 and all pinned dependencies. **Note**: Git submodules are automatically cloned during the build process.
+
+**Important**: If you pull new code changes or switch branches, rebuild without cache:
+```bash
+docker-compose build --no-cache
+```
+
+**4. Run smoke test (Optional but Recommended)**
+
+Verify your setup with the automated smoke test:
+
+```bash
+./smoke_test.sh
+```
+
+This will check Docker installation, build the image, and verify all components are working correctly.
+
+**5. Run training and testing**
+
+**Default (RoBERTa):**
+```bash
+docker-compose up
+```
+
+**SetFit training on sample data:**
+```bash
+docker-compose up nasa-classifier-setfit
+```
+
+**LLM (Llama-2-7B) zero-shot inference:**
+```bash
+docker-compose up nasa-classifier-llm
+```
+
+These commands will run the respective models inside containers using the configurations in the `config/` directory.
+
+**Note**: The container will display startup information including Python version, configuration details, and progress bars/logging output in real-time.
+
+**6. Access results**
+
+Results will be available in the `output/` directory on your host machine, and logs in the `logs/` directory.
+
+#### Model-Specific Information
+
+- **RoBERTa** (default): Fine-tunes RoBERTa-base model on sample data. Memory: 6-8GB RAM required.
+- **SetFit**: Efficient few-shot learning with SetFit. Memory: 2-4GB RAM required (6GB limit configured for safety).
+- **LLM (Llama-2-7B)**: Zero-shot classification with 4-bit quantization. Memory: 8-12GB RAM required. GPU highly recommended for faster inference. Uses `nasa_llm_test_sample.csv` which has separate `title` and `body` columns (required for prompt templates).
+
+**Important**: 
+- **RoBERTa and SetFit** use `nasa_*_sample.csv` files which have a single merged `text` column. The `config/config.yaml` has `text_columns` commented out for this format.
+- **LLM** uses `nasa_llm_test_sample.csv` which has separate `title` and `body` columns (needed for prompt templates). The docker-compose command includes these overrides automatically.
+- If you switch to full datasets (`cfs_*.csv`, `fprime_*.csv`), see the Troubleshooting section on Data Format Issues.
+
+#### Advanced Docker Usage
+
+**Run with custom configuration overrides:**
+
+You can override configuration values from the command line:
+
+```bash
+# Run SetFit with different parameters
+docker-compose run nasa-classifier python main.py --config-override model_type=setfit num_epochs=2
+
+# Run in prediction-only mode
+docker-compose run nasa-classifier python main.py --config-override just_predict=true
+
+# Multiple overrides
+docker-compose run nasa-classifier python main.py --config-override model_type=llm just_predict=true
+```
+
+**Run with GPU support:**
+
+GPU support is **enabled by default** in all three services. To use GPUs:
+
+1. Install NVIDIA Container Toolkit (if not already installed):
+```bash
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/libnvidia-container/gpgkey | sudo apt-key add -
+curl -s -L https://nvidia.github.io/libnvidia-container/$distribution/libnvidia-container.list | \
+  sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+sudo systemctl restart docker
+```
+
+2. Verify GPU access:
+```bash
+docker run --rm --gpus all nvidia/cuda:11.8.0-base-ubuntu22.04 nvidia-smi
+```
+
+3. Run services (they will automatically use GPU):
+```bash
+docker-compose up                           # RoBERTa with GPU
+docker-compose up nasa-classifier-llm       # LLM with GPU (recommended)
+```
+
+**Note**: If you don't have a GPU or nvidia-docker, the services will fail to start. To disable GPU support, comment out the `devices` section under each service in `docker-compose.yml`.
+
+**Interactive shell inside container:**
+
+```bash
+docker-compose run nasa-classifier bash
+```
+
+**Validate Docker setup:**
+
+```bash
+./validate_docker.sh
+```
+
+This script checks that Docker is properly configured and all dependencies are correctly installed.
+
+**Clean up Docker resources:**
+
+```bash
+docker-compose down
+docker image rm nasa-issue-classifier:latest
+```
+
+### Manual Installation (Alternative)
+
+If you prefer not to use Docker, you can set up the environment manually.
+
+#### Prerequisites
+Python 3.11.x is recommended to run this project. For best reproducibility, use Python 3.11.6 (as specified in the Docker environment). You can check your Python version by running:
 
 ```bash
 python --version
@@ -224,9 +391,284 @@ The LLM responses will be saved in the directory specified by `responses_dir`.
 
 ## Troubleshooting
 
-If you encounter issues:
+### Common Issues
+
+#### Container Exits with Code 137 (Out of Memory)
+
+**Problem**: The container terminates unexpectedly during training with exit code 137.
+
+**Cause**: This indicates the container ran out of memory (OOM). Training large transformer models like RoBERTa requires significant RAM.
+
+**Solutions**:
+
+1. **Increase Docker memory allocation**:
+   - The docker-compose.yml is configured with 8GB memory limit by default
+   - If you have less RAM available, reduce the batch size in `config/config_roberta.yaml`:
+     ```yaml
+     per_device_train_batch_size: 8  # Reduce from 16 to 8
+     ```
+   - Or use a smaller model like SetFit by changing `model_type` in `config/config.yaml`:
+     ```yaml
+     model_type: "setfit"  # Uses less memory than RoBERTa
+     ```
+
+2. **Adjust Docker Desktop memory settings** (if using Docker Desktop):
+   - Open Docker Desktop → Settings → Resources
+   - Increase "Memory" to at least 8GB (12GB recommended for RoBERTa)
+   - Click "Apply & Restart"
+
+3. **Modify memory limits in docker-compose.yml**:
+   ```yaml
+   deploy:
+     resources:
+       limits:
+         memory: 12G  # Increase if you have more RAM available
+   ```
+
+**Memory Requirements by Model Type**:
+- SetFit: 2-4GB RAM (6GB Docker limit for safety margin)
+- RoBERTa-base: 6-8GB RAM (12GB recommended)
+- LLM models: 8-16GB RAM (varies by model size)
+
+#### Progress Bars Not Visible
+
+If progress bars are not showing, ensure `tty: true` is set in docker-compose.yml (already configured).
+
+#### Submodules Not Initialized
+
+Submodules are automatically cloned during Docker build. If missing, rebuild the image:
+```bash
+docker-compose build --no-cache
+```
+
+#### Config Overrides Not Working / Wrong Model Running
+
+**Problem**: Running `docker-compose up nasa-classifier-setfit` or `nasa-classifier-llm` still executes RoBERTa instead of the intended model.
+
+**Cause**: Docker is using a cached image that doesn't include the latest code changes.
+
+**Solution**: Rebuild the image without cache:
+```bash
+# Force rebuild without cache
+docker-compose build --no-cache
+
+# Then run the desired service
+docker-compose up nasa-classifier-setfit
+docker-compose up nasa-classifier-llm
+```
+
+**Verification**: After rebuilding, you should see debug output showing:
+- "Command: python main.py --config-override model_type=..."
+- "CLI Arguments parsed: ..."
+- "FINAL CONFIGURATION: Model type: [setfit/llm/roberta]"
+
+If the final configuration still shows the wrong model type, check that docker-compose.yml has the correct `command:` setting for the service.
+
+#### Data Format Issues (text_columns Error)
+
+**Problem**: Training fails with errors about missing columns (e.g., "title" or "body" not found), or LLM prompting fails.
+
+**Cause**: The repository supports three data file types:
+1. **Sample data for RoBERTa/SetFit** (`nasa_train_sample.csv`, `nasa_test_sample.csv`): Has a single `text` column with pre-merged content
+2. **Sample data for LLM** (`nasa_llm_test_sample.csv`): Has separate `title` and `body` columns (required for prompt templates)
+3. **Full data** (`cfs_*.csv`, `fprime_*.csv`): Has separate `title` and `body` columns
+
+**Solution**:
+
+**For RoBERTa/SetFit sample data** (default Docker setup for these models):
+- The `text_columns` parameter should be commented out in `config/config.yaml` (already configured):
+  ```yaml
+  # text_columns:  # Commented out for sample data
+  #   - "title"
+  #   - "body"
+  label_column: "label"
+  merged_text_column: "text"
+  ```
+
+**For LLM sample data** (default Docker setup for LLM):
+- The docker-compose command automatically overrides to use `nasa_llm_test_sample.csv` with title/body columns
+- No manual configuration changes needed
+
+**For full data**:
+- Uncomment `text_columns` in `config/config.yaml`:
+  ```yaml
+  text_columns:
+    - "title"
+    - "body"
+  label_column: "label"
+  merged_text_column: "text"
+  ```
+- Update data paths in `config/config.yaml`:
+  ```yaml
+  train_path: "data/cfs_train.csv"  # or fprime_train.csv
+  test_path: "data/cfs_test.csv"    # or fprime_test.csv
+  ```
+
+**Note**: If you switch between sample and full data, remember to rebuild the Docker image:
+```bash
+docker-compose build --no-cache
+```
+
+### Other Issues
+
+If you encounter other issues:
 - Verify that the `config/config.yaml` file and other configuration files are correctly formatted and contain valid paths.
 - Ensure all dependencies are installed properly.
 - Confirm that the datasets are correctly formatted and accessible in the data folder.
 - Check that the model-specific configuration files (`config_roberta.yaml`, `config_setfit.yaml`, `config_llm.yaml`) are present in the `config/` directory and properly formatted.
 - For OpenAI models, make sure your API key and organization ID are correctly set in the `.env` file and the configuration.
+
+## Reproducibility
+
+This project is designed to be fully reproducible across different machines and environments.
+
+### Environment Specifications
+
+- **Python Version**: 3.11.6 (pinned in Dockerfile)
+- **Operating System**: Linux (Docker container based on Debian)
+- **All dependencies**: Version-pinned in `requirements.txt`
+- **Random seed**: 42 (set in `config.yaml`)
+- **Hardware requirements**: 
+  - CPU: Any modern x86_64 processor
+  - RAM: Minimum 8GB (12GB+ recommended for RoBERTa training)
+  - GPU: Optional (CUDA-compatible GPU for faster training)
+  - Disk: ~5GB for Docker image and dependencies
+
+### Exact Replication Configuration
+
+To reproduce the exact results from the paper:
+
+1. **Random Seed**: Set to `42` in `config/config.yaml`
+   ```yaml
+   random_seed: 42
+   ```
+
+2. **Model Configuration**: The paper uses configurations in `config/config_roberta.yaml` and `config/config_setfit.yaml`
+
+3. **Data**: Use the provided training and test splits:
+   - Training: `data/nasa_train_sample.csv` or full datasets (`data/cfs_train.csv`, `data/fprime_train.csv`)
+   - Testing for RoBERTa/SetFit: `data/nasa_test_sample.csv` or full datasets (`data/cfs_test.csv`, `data/fprime_test.csv`)
+   - Testing for LLM: `data/nasa_llm_test_sample.csv` (sampled from `cfs_test.csv` with title/body columns for prompt templates)
+
+4. **Hyperparameters**: All hyperparameters are specified in the model-specific config files
+
+### Smoke Test
+
+Run the automated smoke test to verify your setup:
+
+```bash
+./smoke_test.sh
+```
+
+This script will:
+- ✓ Check Docker installation
+- ✓ Verify all required files exist
+- ✓ Build the Docker image
+- ✓ Test container startup
+- ✓ Verify Python 3.11.6
+- ✓ Check all dependencies
+- ✓ Confirm submodule initialization
+
+### Ensuring Reproducibility
+
+1. **Use Docker (Recommended)**: The Docker setup guarantees a consistent environment with exact Python and library versions.
+
+2. **Manual setup**: If not using Docker, ensure you use Python 3.11.6 and install dependencies from the pinned `requirements.txt`:
+   ```bash
+   python3.11 -m pip install -r requirements.txt
+   ```
+
+3. **Fixed random seed**: The `random_seed` parameter in `config.yaml` ensures reproducible results across runs.
+
+4. **Version control**: All dependency versions are explicitly pinned to ensure compatibility.
+
+### Known Issues and Compatibility
+
+The dependencies have been tested and verified to work together with Python 3.11.6. Newer versions of some libraries may introduce breaking changes. The Docker environment ensures all versions are correct.
+
+### Verifying Your Setup
+
+To verify your environment is correctly set up, run a quick test:
+
+```bash
+# With Docker
+docker-compose run nasa-classifier python -c "import transformers; print(transformers.__version__)"
+
+# Without Docker
+python -c "import transformers; print(transformers.__version__)"
+```
+
+Expected output: `4.39.0`
+
+### Security Considerations
+
+**Important**: Some dependencies have known security vulnerabilities. Where possible, we've upgraded to patched versions while maintaining compatibility. However, some vulnerabilities remain due to compatibility requirements specified in the original issue.
+
+#### Vulnerabilities Patched in This Release
+
+✅ **protobuf** - Upgraded from 4.25.3 to 4.25.8
+   - Fixed: Critical DoS vulnerabilities in the 4.x series (CVE-specific to versions < 4.25.8)
+
+✅ **sentencepiece** - Upgraded from 0.2.0 to 0.2.1
+   - Fixed: Heap overflow issue (CVE-specific to versions < 0.2.1)
+
+#### Known Remaining Vulnerabilities
+
+⚠️ **protobuf 4.25.8** - CANNOT BE UPGRADED (Patched version: 6.33.5)
+   - **Issue**: JSON recursion depth bypass (affects ALL versions <= 6.33.4)
+   - **Attempted fix**: Upgrade to 6.33.5 attempted but failed
+   - **Blocking dependency**: wandb 0.16.6 requires protobuf<5, creating dependency conflict
+   - **Error**: `wandb 0.16.6 depends on protobuf!=4.21.0, <5 and >=3.19.0`
+   - **Options to fix**:
+     1. Remove wandb entirely (breaks model tracking)
+     2. Upgrade wandb to version that supports protobuf 6.x (may break compatibility)
+     3. Accept the vulnerability with mitigations
+   - **Mitigation**: Avoid processing untrusted JSON/protobuf data; run in isolated Docker container
+
+⚠️ **transformers 4.39.0** (Patched version: 4.48.0)
+   - Issue: Deserialization of untrusted data vulnerability
+   - Reason kept: Required for codebase compatibility as specified in issue
+   - Mitigation: Only load models from trusted sources (e.g., official Hugging Face repos)
+
+⚠️ **torch 2.2.2** (Patched version: 2.6.0)
+   - Issue: `torch.load` with `weights_only=True` can lead to RCE; deserialization vulnerability
+   - Reason kept: Required for compatibility with transformers 4.39.0 and numpy 1.26.4
+   - Mitigation: Code does not use `torch.load` directly; only use trusted model files
+   - Note: One advisory for this has been withdrawn
+
+⚠️ **wandb 0.16.6** (Advisory withdrawn)
+   - Issue: SSRF vulnerability (advisory has been withdrawn)
+   - Status: Advisory withdrawn - likely false positive or issue resolved
+   - Note: Not a genuine security concern
+
+#### Security Best Practices
+
+When using this repository:
+1. **Do not load untrusted model files or pickled data**
+2. **Only use models from trusted sources** (e.g., official Hugging Face repositories)
+3. **Run in isolated environment** (Docker container strongly recommended)
+4. **Avoid processing untrusted user inputs** directly
+5. **Do not expose this application directly to the internet**
+6. **Monitor for security updates** in the dependencies
+
+#### For Production Use
+
+**⚠️ Warning**: These pinned versions are for **research reproducibility only**. 
+
+For production deployments:
+- Upgrade to patched versions: transformers >= 4.48.0, torch >= 2.6.0, protobuf >= 5.29.5 or >= 6.33.5
+- Test thoroughly for compatibility with your use case
+- Implement additional security controls (input validation, sandboxing, etc.)
+- Security must take priority over exact version matching
+
+#### Security Summary
+
+| Dependency | Current | Patched | Status | Risk Level |
+|------------|---------|---------|--------|------------|
+| protobuf | 4.25.8 | 6.33.5 | Advisory for 6.x series | Low-Medium |
+| sentencepiece | 0.2.1 | ✅ Latest | Patched | None |
+| transformers | 4.39.0 | 4.48.0 | Known vuln | High (if loading untrusted models) |
+| torch | 2.2.2 | 2.6.0 | Known vuln | High (if using torch.load on untrusted data) |
+| wandb | 0.16.6 | N/A | Advisory withdrawn | None |
+
+**Note**: The pinned versions are primarily for research reproducibility and replicating published results. This setup should **only be used in trusted, isolated environments** for research purposes.
